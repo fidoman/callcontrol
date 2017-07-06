@@ -14,7 +14,7 @@ def initiate_call(callerid, ext, phone):
   client = AMIClient(address=asterisk_conf["address"], port=asterisk_conf["port"])
   client.login(username=asterisk_conf["username"], secret=asterisk_conf["secret"])
   action = SimpleAction('Originate',                                          
-                                Channel = "Local/"+ext+"@from-internal",
+                                Channel = "Local/"+ext+"@from-internal-auto",
                                 Context = 'call-out',
                                 Exten = phone.get(),
                                 Priority = 1,
@@ -25,6 +25,7 @@ def initiate_call(callerid, ext, phone):
 
 
 def order_window(shop, shop_ph):
+  global asterisk_conf
   ow = Toplevel()
   s = Label(ow, text=shop)
   s.pack()
@@ -34,6 +35,6 @@ def order_window(shop, shop_ph):
   ph_entry = Entry(call_fr)
   ph_entry.pack(side=LEFT)
   call_fr.pack()   
-  c = Button(ow, text="Звонок", command=lambda c=shop_ph, e='202', p=ph_entry: initiate_call(c, e, p))
+  c = Button(ow, text="Звонок", command=lambda c=shop_ph, e=asterisk_conf['ext'], p=ph_entry: initiate_call(c, e, p))
   c.pack()
   ph_entry.focus()

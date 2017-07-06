@@ -173,8 +173,8 @@ def bg_task(root):
 
 from asterisk.ami import *
 
-client = AMIClient(address='asterisk.fidoman.ru', port=5038)
-client.login(username='fastery', secret='fast7733')
+client = AMIClient(address=asterisk_conf["address"], port=asterisk_conf["port"])
+client.login(username=asterisk_conf["username"], secret=asterisk_conf["secret"])
 
 calls = {}
 myext = set(("202",))

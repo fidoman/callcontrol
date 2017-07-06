@@ -1,2 +1,5 @@
 Install following python modules:
   pip install asterisk-ami
+
+To fetch data from google docs:
+  pip install --upgrade google-api-python-client
