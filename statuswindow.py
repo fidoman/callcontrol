@@ -117,7 +117,7 @@ def hangup_closer(event, w, ch, **kwargs):
     w.closer()
 
 def status_window_operation(mode, root, args):
-  global asterisk_conf^M
+  global asterisk_conf
   client = AMIClient(address=asterisk_conf["address"], port=asterisk_conf["port"])
   client.login(username=asterisk_conf["username"], secret=asterisk_conf["secret"])
   extstats = {}
