@@ -1,6 +1,7 @@
 import httplib2
 import os
 import json
+from itertools import count
 
 from apiclient import discovery
 from oauth2client import client
@@ -76,9 +77,26 @@ def fetch_doc(doc_id):
 def fetch_all():
   doc_list=json.load(open('gdocs.json'))
   for what, doc in doc_list.items():
-    print(what)
-    data = fetch_doc(doc)
-    print(data)
+    doc_id = doc["id"]
+    doc_columns = doc["columns"]
+    data = fetch_doc(doc_id)
+    header = None
+    while not header: # skip empty lines
+      header, data = data[0], data[1:]
+    print(doc_columns, header)
+    coltext_n = {} # make map header text -> col_n
+    for n, h in zip(count(0), header):
+      print(n, h)
+      coltext_n[h] = n
+
+    col_n = {}
+    for colname, coltext in doc_columns.items():
+      if coltext in coltext_n:
+        col_n[colname] = coltext_n[coltext] # or error - no needed column
+      else:
+        raise Exception("Document %s does not have column %s"%(doc_id, coltext))
+
+    print(col_n)
    
 
 #    if not values:
