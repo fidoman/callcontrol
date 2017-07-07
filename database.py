@@ -14,6 +14,8 @@ Keep connection, reestablish if needed
 def save_record(r):
   
 
+def get_call_history(callerid):
+  ...
 
 class CallsDB():
   def __init__(self):

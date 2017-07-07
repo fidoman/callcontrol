@@ -7,6 +7,8 @@ import traceback
 
 from statuswindow import status_window_operation
 
+asterisk_conf = json.load(open("asterisk.json"))
+
 root = Tk()
 screen_w, screen_h = root.winfo_screenwidth(), root.winfo_screenheight()
 window_w, window_h = 320, 200
@@ -120,15 +122,18 @@ def add_call_window(callerid, destination, operator, channel):
   cw.geometry('%dx%d+%d+%d'%(window_w, window_h, x, y))
   call_windows.append(cw)
 
-  for page in shops.by_dest.get(destination, [None,[]])[1]:
-    print("Open", page)
-    os.system('start '+page)
-#  os.system('start https://google.com')
 
   return cw, statusvar
  except:
   traceback.print_exc()
   return None, None
+
+def open_shop_doc(destination):
+  for page in shops.by_dest.get(destination, [None,[]])[1]:
+    print("Open", page)
+    os.system('start '+page)
+#  os.system('start https://google.com')
+
 
 def close_call_window(window):
   global call_windows
@@ -156,8 +161,8 @@ def close_call_window(window):
 #root.geometry('%dx%d-%d-%d'%(window_w, window_h, space_h, space_v))
 
 
-show_window = lambda: root.deiconify(); root.lift(); root.wm_attributes('-topmost', 1)
-hide_window = lambda: root.wm_withdraw()
+#show_window = lambda: root.deiconify(); root.lift(); root.wm_attributes('-topmost', 1)
+#hide_window = lambda: root.wm_withdraw()
 
 def bg_task(root):
   # connect to asterisk and wait for incoming data
@@ -177,7 +182,7 @@ client = AMIClient(address=asterisk_conf["address"], port=asterisk_conf["port"])
 client.login(username=asterisk_conf["username"], secret=asterisk_conf["secret"])
 
 calls = {}
-myext = set(("202",))
+myext = set((asterisk_conf["ext"],))
 state = []
 
 def event_listener(event,**kwargs):
@@ -215,9 +220,16 @@ def event_listener(event,**kwargs):
       if event.keys.get("ChannelState")=='6':
         #print(event.keys)
         uid=event.keys.get("Uniqueid")
+        print("call", uid, "is Up")
         sv=calls[uid].get("statusvar")
         if sv:
           sv.set("Up")
+          try:
+            calleruid = calls[uid]["calleruid"]
+            print("caller:", calleruid)
+            open_shop_doc(calls[calleruid].get("destination", ""))
+          except:
+            print("could not open script page")
           #ch=event.keys.get("Channel")
           #print("up:", ch, uid, calls[uid])
           #calls[uid]["channel"] = ch
