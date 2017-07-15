@@ -54,3 +54,24 @@ end;
 $op_hist$ language plpgsql;
 
 create trigger change_op_group after insert or update or delete on operators for each row execute procedure operators_history();
+
+grant select, insert, update on operators to cc_populate;
+grant select on operators_op_id_seq to cc_populate;
+grant select, insert, update on operator_ext_history to cc_populate;
+grant select, insert, update on operator_group_history to cc_populate;
+
+create table sip_users (
+su_id serial primary key,
+su_host varchar,
+su_username varchar,
+su_secret varchar,
+su_myext varchar,
+su_phone varchar
+);
+
+create table extensions (
+ext_n varchar primary key,
+ext_pw varchar
+);
+
+grant select,insert,update,delete on extensions to cc_populate ;
