@@ -8,6 +8,7 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
+import postgresql
 
 try:
     import argparse
@@ -76,6 +77,7 @@ def fetch_doc(doc_id):
 
 def fetch_all():
   doc_list=json.load(open('gdocs.json'))
+  all_data = {}
   for what, doc in doc_list.items():
     doc_id = doc["id"]
     doc_columns = doc["columns"]
@@ -83,7 +85,7 @@ def fetch_all():
     header = None
     while not header: # skip empty lines
       header, data = data[0], data[1:]
-    print(doc_columns, header)
+    print(what, doc_columns, header)
     coltext_n = {} # make map header text -> col_n
     for n, h in zip(count(0), header):
       print(n, h)
@@ -96,8 +98,14 @@ def fetch_all():
       else:
         raise Exception("Document %s does not have column %s"%(doc_id, coltext))
 
-    print(col_n)
-   
+
+#    print(col_n)
+#    for data1 in data:
+#      print(data1)
+
+    all_data[what]=(col_n, data)
+
+  return all_data
 
 #    if not values:
 #        print('No data found.')
@@ -115,4 +123,29 @@ def fetch_all():
 #        json.dump(out, open("shops.json", "w"))
 
 if __name__ == '__main__':
-    fetch_all()
+    all_data = fetch_all()
+    print("sources:", all_data.keys())
+    managers_cols, managers_data = all_data['managers']
+    dbconn = json.load(open("database.json"))
+    db = postgresql.open(**dbconn)
+    q_ops = db.prepare("select op_group, op_ext from operators where op_name=$1")
+    q_op_ins = db.prepare("insert into operators (op_name, op_group, op_ext) values ($1, $2, $3)")
+    q_op_upd = db.prepare("update operators set op_group=$2, op_ext=$3 where op_name=$1")
+
+    for m in managers_data:
+     # print(m[managers_cols['name']])
+     # print(m[managers_cols['group']])
+     # print(m[managers_cols['ext']])
+      name = m[managers_cols['name']]
+      group = m[managers_cols['group']]
+      ext = m[managers_cols['ext']]
+
+      x=q_ops(name)
+      if len(x)==0:
+        print("new operator", name)
+        q_op_ins(name, group, ext)
+      else:
+        print("existing operator", name, x[0][0], x[0][1])
+        if x[0][0]!=group or x[0][1]!=ext:
+          print("need update")
+          q_op_upd(name, group,ext)
