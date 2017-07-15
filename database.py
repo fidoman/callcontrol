@@ -42,12 +42,15 @@ if __name__=="__main__":
 
   if sys.argv[1]=="passwords":
     """ populate and show passwords for operators """
-    for (ext,) in db.prepare("select op_ext from operators")():
+    for ext, name in db.prepare("select op_ext, op_name from operators")():
       pw = db.prepare("select ext_pw from extensions where ext_n=$1")(ext)
       if len(pw)==0:
         print("generate password for", ext)
-        pw = gen_pw(12)
-        db.prepare("insert into extensions (ext_n, ext_pw) values ($1, $2)")(ext, pw)
+        npw = gen_pw(12)
+        db.prepare("insert into extensions (ext_n, ext_pw) values ($1, $2)")(ext, npw)
+      else:
+        npw = pw[0][0]
+      print("%40s %05s %16s"%(name, ext, npw))
 
   elif sys.argv[1]=="rmpw":
     if len(sys.argv)<3:
@@ -55,3 +58,30 @@ if __name__=="__main__":
       exit()
     for ext in sys.argv[2:]:
       db.prepare("delete from extensions where ext_n=$1")(ext)
+
+  elif sys.argv[1]=="operators":
+    print("; sip.conf part for opeartors")
+    TPL="""
+[%(ext)s]
+type=friend
+context=from-internal
+username=%(ext)s
+secret=%(secret)s
+host=dynamic
+nat=comedia
+qualify=yes
+canreinvite=no
+;callgroup=1
+;pickupgroup=1
+call-limit=1
+dtmfmode=auto
+disallow=all
+allow=alaw
+allow=ulaw
+allow=g729
+allow=g723
+allow=g722
+outofcall_message_context=intmsg
+"""
+    for n, pw in db.prepare("select ext_n, ext_pw from extensions order by ext_n"):
+      print(TPL%{"ext": n, "secret": pw})

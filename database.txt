@@ -74,4 +74,4 @@ ext_n varchar primary key,
 ext_pw varchar
 );
 
-grant select,insert,update,delete on extensions to cc_populate ;
+grant select,insert,update,delete on extensions to cc_populate;
