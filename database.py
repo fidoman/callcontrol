@@ -85,3 +85,19 @@ outofcall_message_context=intmsg
 """
     for n, pw in db.prepare("select ext_n, ext_pw from extensions order by ext_n"):
       print(TPL%{"ext": n, "secret": pw})
+
+  elif sys.argv[1]=="sipout":
+    print("; sip.conf part for provider")
+    TPL="""
+[sipout%(prov_ext)s]
+type=peer
+username=%(prov_name)s
+secret=%(prov_secret)s
+dtmfmode=rfc2833
+context=trunkinbound
+insecure=port,invite
+host=%(prov_host)s
+"""
+    for su_host, su_username, su_secret, su_myext in db.prepare("select su_host, su_username, su_secret, su_myext from sip_users"):
+      print(TPL%{"prov_ext": su_myext, "prov_name": su_username, "prov_secret": su_secret, "prov_host": su_host})
+

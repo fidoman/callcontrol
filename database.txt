@@ -75,3 +75,4 @@ ext_pw varchar
 );
 
 grant select,insert,update,delete on extensions to cc_populate;
+grant select on sip_users to cc_populate ;
