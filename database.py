@@ -103,6 +103,25 @@ host=%(prov_host)s
 
   elif sys.argv[1]=="callout":
     print("; callout part of extensions.conf")
-    TPL="exten => _+7XXXXXXXXXX/%(prov_phone)s,2,Dial(SIP/sipout%(prov_ext)s/7${EXTEN:2},,To)\n"
+    TPL="exten => _+7XXXXXXXXXX/%(prov_phone)s,3,Dial(SIP/sipout%(prov_ext)s/7${EXTEN:2},,To)\n"
     for su_username, su_myext, su_phone in db.prepare("select su_username, su_myext, su_phone from sip_users"):
       print(TPL%{"prov_phone": su_phone, "prov_ext": su_myext})
+
+  elif sys.argv[1]=="internal":
+    print("; internal extensions")
+    TPL="""exten => %(ext)s,1,Dial(SIP/%(ext)s,,To)
+exten = %(ext)s,hint,SIP/%(ext)s"""
+    for (n,) in db.prepare("select ext_n from extensions order by ext_n"):
+      print(TPL%{"ext": n})
+
+  elif sys.argv[1]=="inbound":
+    print(";inbound calls")
+    TPL="""
+exten => %(prov_ext)s,1,Set(CALLERID(num)=+${CALLERID(num)})
+exten => %(prov_ext)s,2,Monitor(wav,callin-%(prov_ext)-${CHANNEL}-+-${CALLERID(num)}-+-${EXTEN}-+-${EPOCH},m)
+exten => %(prov_ext)s,3,Set(CALLERID(name)=%(destiname)s)
+exten => %(prov_ext)s,n,Dial(SIP/%(pri_manager)s)
+; call primary manager
+; then call group
+exten => %(prov_ext)s,n,Hangup
+    """
