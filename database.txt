@@ -1,0 +1,56 @@
+База данных:
+Таблица operators - текущее состояние
+operator_group_history
+operator_ext_history
+ - заносятся данные, если в документе изменилось значение и таблица operators должна быть изменена
+
+create table operator_ext_history (
+op_id integer references operators,
+op_eh_tmstmp timestamp,
+op_eh_old varchar,
+op_eh_new varchar
+);
+
+create table operator_group_history (
+op_id integer references operators,
+op_gh_tmstmp timestamp,
+op_gh_old varchar,
+op_gh_new varchar
+);
+
+
+create table operators (
+op_id serial primary key,
+op_name varchar,
+op_group varchar
+)
+;
+alter table operators add op_ext varchar;
+
+
+create or replace function operators_history() returns trigger as $op_hist$
+begin
+  -- TG_OP
+  if (TG_OP = 'INSERT') then -- insert
+    insert into operator_group_history select new.op_id, now(), null, new.op_group;
+    insert into operator_ext_history select new.op_id, now(), null, new.op_ext;
+    return new;
+  elsif (TG_OP = 'DELETE') then -- will never success
+    insert into operator_group_history select old.op_id, now(), old.op_group, null;
+    insert into operator_ext_history select old.op_id, now(), old.op_ext, null;
+    return old;
+  elsif (TG_OP = 'UPDATE') then
+    if (new.op_group <> old.op_group) then
+      insert into operator_group_history select new.op_id, now(), old.op_group, new.op_group;
+    end if;
+
+    if (new.op_ext <> old.op_ext) then
+      insert into operator_ext_history select new.op_id, now(), old.op_ext, new.op_ext;
+    end if;
+    return new;
+  end if;
+  return null;
+end;
+$op_hist$ language plpgsql;
+
+create trigger change_op_group after insert or update or delete on operators for each row execute procedure operators_history();
