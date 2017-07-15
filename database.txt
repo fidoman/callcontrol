@@ -76,3 +76,12 @@ ext_pw varchar
 
 grant select,insert,update,delete on extensions to cc_populate;
 grant select on sip_users to cc_populate ;
+
+create table shops (
+shop_id serial primary key,
+shop_name varchar,
+shop_phone varchar,
+shop_pri_manager varchar,
+shop_worktime varchar
+);
+grant select,insert,update  on shops to cc_populate;

@@ -122,12 +122,19 @@ def fetch_all():
 #        import json
 #        json.dump(out, open("shops.json", "w"))
 
+def getval(l, i):
+  if len(l)>i:
+    return l[i]
+  else:
+    return None
+
 if __name__ == '__main__':
     all_data = fetch_all()
     print("sources:", all_data.keys())
-    managers_cols, managers_data = all_data['managers']
     dbconn = json.load(open("database.json"))
     db = postgresql.open(**dbconn)
+
+    managers_cols, managers_data = all_data['managers']
     q_ops = db.prepare("select op_group, op_ext from operators where op_name=$1")
     q_op_ins = db.prepare("insert into operators (op_name, op_group, op_ext) values ($1, $2, $3)")
     q_op_upd = db.prepare("update operators set op_group=$2, op_ext=$3 where op_name=$1")
@@ -149,3 +156,9 @@ if __name__ == '__main__':
         if x[0][0]!=group or x[0][1]!=ext:
           print("need update")
           q_op_upd(name, group,ext)
+
+    shops_cols, shops_data = all_data['shops']
+    for s in shops_data:
+      print(getval(s, shops_cols['shop']))
+      print(getval(s, shops_cols['phone']))
+      print(getval(s, shops_cols['script']))
