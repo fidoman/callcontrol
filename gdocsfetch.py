@@ -51,7 +51,7 @@ def get_credentials():
         print('Storing credentials to ' + credential_path)
     return credentials
 
-def fetch_doc(doc_id):
+def fetch_doc(doc_id, doc_range):
     """Shows basic usage of the Sheets API.
 
     Creates a Sheets API service object and prints the names and majors of
@@ -68,8 +68,9 @@ def fetch_doc(doc_id):
 #    spreadsheetId = '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms'
     spreadsheetId = doc_id
 #    rangeName = 'C2:C59'
+    print("range:", doc_range)
     result = service.spreadsheets().values().get(
-        spreadsheetId=spreadsheetId, range='A:Z').execute() #, range=rangeName
+        spreadsheetId=spreadsheetId, range=doc_range).execute() #, range=rangeName
     values = result.get('values', [])
 
     return values
@@ -81,7 +82,8 @@ def fetch_all():
   for what, doc in doc_list.items():
     doc_id = doc["id"]
     doc_columns = doc["columns"]
-    data = fetch_doc(doc_id)
+    doc_range = doc["range"]
+    data = fetch_doc(doc_id, doc_range)
     header = None
     while not header: # skip empty lines
       header, data = data[0], data[1:]
@@ -159,6 +161,27 @@ if __name__ == '__main__':
 
     shops_cols, shops_data = all_data['shops']
     for s in shops_data:
-      print(getval(s, shops_cols['shop']))
-      print(getval(s, shops_cols['phone']))
-      print(getval(s, shops_cols['script']))
+      # insert/update on shop_name (add record or update record with same shop_data)
+      shop_name=getval(s, shops_cols['shop'])
+      shop_phone=getval(s, shops_cols['phone'])
+      shop_script=getval(s, shops_cols['script'])
+      shop_worktime=getval(s, shops_cols['worktime'])
+      shop_manager=getval(s, shops_cols['manager'])
+      existing = db.prepare("select shop_phone, shop_script, shop_worktime, shop_pri_manager from shops where shop_name=$1")(shop_name)
+      if len(existing)==0:
+        print("add", shop_name)
+        db.prepare("insert into shops (shop_name, shop_phone, shop_script, shop_worktime, shop_pri_manager) values ($1,$2,$3,$4,$5)")\
+		(shop_name, shop_phone, shop_script, shop_worktime, shop_manager)
+      else:
+        if existing[0][0]!=shop_phone:
+          print("update phone")
+          db.prepare("update shops set shop_phone=$2 where shop_name=$1")(shop_name, shop_phone)
+        if existing[0][1]!=shop_script:
+          print("update script")
+          db.prepare("update shops set shop_script=$2 where shop_name=$1")(shop_name, shop_script)
+        if existing[0][2]!=shop_worktime:
+          print("update worktime")
+          db.prepare("update shops set shop_worktime=$2 where shop_name=$1")(shop_name, shop_worktime)
+        if existing[0][3]!=shop_manager:
+          print("update primary manager")
+          db.prepare("update shops set shop_pri_manager=$2 where shop_name=$1")(shop_name, shop_manager)

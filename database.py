@@ -63,6 +63,8 @@ if __name__=="__main__":
     print("; sip.conf part for opeartors")
     TPL="""
 [%(ext)s]
+transport=tls
+encryption=yes
 type=friend
 context=from-internal
 username=%(ext)s
@@ -101,6 +103,11 @@ host=%(prov_host)s
     for su_host, su_username, su_secret, su_myext in db.prepare("select su_host, su_username, su_secret, su_myext from sip_users"):
       print(TPL%{"prov_ext": su_myext, "prov_name": su_username, "prov_secret": su_secret, "prov_host": su_host})
 
+  elif sys.argv[1]=="sipout-register":
+    TPL="""register => %(sipuser)s:%(sippw)s@%(host)s/%(myext)s"""
+    for su_host, su_username, su_secret, su_myext in db.prepare("select su_host, su_username, su_secret, su_myext from sip_users"):
+      print(TPL%{"myext": su_myext, "sipuser": su_username, "sippw": su_secret, "host": su_host})
+
   elif sys.argv[1]=="callout":
     print("; callout part of extensions.conf")
     TPL="exten => _+7XXXXXXXXXX/%(prov_phone)s,3,Dial(SIP/sipout%(prov_ext)s/7${EXTEN:2},,To)\n"
@@ -118,10 +125,16 @@ exten = %(ext)s,hint,SIP/%(ext)s"""
     print(";inbound calls")
     TPL="""
 exten => %(prov_ext)s,1,Set(CALLERID(num)=+${CALLERID(num)})
-exten => %(prov_ext)s,2,Monitor(wav,callin-%(prov_ext)-${CHANNEL}-+-${CALLERID(num)}-+-${EXTEN}-+-${EPOCH},m)
+exten => %(prov_ext)s,2,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}-+-${CALLERID(num)}-+-${EXTEN}-+-${EPOCH},m)
 exten => %(prov_ext)s,3,Set(CALLERID(name)=%(destiname)s)
 exten => %(prov_ext)s,n,Dial(SIP/%(pri_manager)s)
 ; call primary manager
 ; then call group
 exten => %(prov_ext)s,n,Hangup
     """
+
+
+
+    # get extensions
+    for shop_name, shop_phone, su_myext, shop_pri_manager, op_ext in db.prepare("select shop_name, shop_phone, su_myext, shop_pri_manager, op_ext from shops, sip_users, operators where su_phone=shop_phone and shop_pri_manager=op_name"):
+      print(TPL%{'prov_ext':su_myext, 'destiname':shop_name, 'pri_manager': op_ext})

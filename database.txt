@@ -85,3 +85,19 @@ shop_pri_manager varchar,
 shop_worktime varchar
 );
 grant select,insert,update  on shops to cc_populate;
+
+
+...call_log
+manager
+external
+order id
+note
+status
+
+
+create table shop_ext (
+shop_id integer,
+shop_ext varchar,
+shop_ext_tmstmp timestamp
+);
+
