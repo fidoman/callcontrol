@@ -3,3 +3,5 @@ Install following python modules:
 
 To fetch data from google docs:
   pip install --upgrade google-api-python-client
+
+Link data.py to cgi-bin folder.

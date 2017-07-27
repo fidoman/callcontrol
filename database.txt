@@ -101,3 +101,15 @@ shop_ext varchar,
 shop_ext_tmstmp timestamp
 );
 
+
+create user cc_data login;
+grant select on shops to cc_data;
+create view sip_ext (myext, phone) as select su_myext, su_phone from sip_users;
+grant select on sip_ext to cc_data;
+
+create table tags (
+tag_id serial primary key,
+tag_name varchar unique
+);
+// populate with call tags
+grant select on tags to cc_data;
