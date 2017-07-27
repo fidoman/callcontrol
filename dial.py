@@ -10,11 +10,13 @@
 import re
 import json
 import traceback
+import urllib.request
 from tkinter import *
 
 from order import order_window
 
-shops = json.load(open("shops.json"))
+asterisk_conf = json.load(open("asterisk.json"))
+shops = json.load(urllib.request.urlopen(asterisk_conf["data"]+"?what=shops"))
 
 dialw = Tk()
 
