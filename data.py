@@ -26,6 +26,14 @@ try:
     for n, ph, scr, ext in db.prepare("select shop_name, shop_phone, shop_script, myext from shops, sip_ext"
         " where phone=shop_phone")():
       out.append((n, ph, scr, ext))
+
+  elif what == "tags":
+    out=[]
+    for i, t in db.prepare("select tag_id, tag_name from tags")():
+      out.append((i, t))
+
+
+
 except Exception as e:
   print("Content-type: text/plain\n")
   print("error", type(e)) #, e.code, e.creator)
