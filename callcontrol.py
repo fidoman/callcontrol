@@ -4,6 +4,7 @@ import threading
 import os
 import json
 import traceback
+import urllib.request
 
 from statuswindow import status_window_operation
 
@@ -257,23 +258,26 @@ client.add_event_listener(event_listener)
 
 class ShopsData:
   def __init__(self):
-    self.fname = "shops.json"
-    self.sipdest = 'sipdest.json'
+    global asterisk_conf
+    self.shops_url = asterisk_conf["data"]+"?what=shops"
     self.by_phone = {}
     self.by_dest = {}
 
   def load(self):
-    for s in json.load(open(self.fname)):
+    for s in json.load(urllib.request.urlopen(self.shops_url)):
       #print(s) 
       self.by_phone[s[1]] = (s[0], s[2])
-    for d, ph in json.load(open(self.sipdest)):
-      self.by_dest[d] = self.by_phone[ph]
+      self.by_dest[s[3]] = (s[0], s[2])
 
 
 shops = ShopsData()
 shops.load()
 
-call_tags = json.load(open("tags.json", encoding="utf-8"))
+call_tags = []
+for tag_id, tag_name in json.load(urllib.request.urlopen(asterisk_conf["data"]+"?what=tags")):
+  call_tags.append(tag_name)
+
+print(call_tags)
 
 #print(dir(root))
 
