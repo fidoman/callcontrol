@@ -80,14 +80,14 @@ def transfer_window(ch):
 
 
 
-def add_call_window(callerid, destination, operator, channel):
+def add_call_window(callerid, shop_info, operator, channel):
  try:
   global call_windows
   global shops
   global call_tags
   cw = Toplevel()
   cw.wm_attributes('-topmost', 1)
-  cw.title("%s->%s [%s] %s"%(callerid, destination, operator, channel))
+  cw.title("%s->%s [%s] %s"%(callerid, shop_info[0], operator, channel))
 
   sv_label = Label(cw, text="Состояние")
   statusvar = StringVar()
@@ -97,26 +97,35 @@ def add_call_window(callerid, destination, operator, channel):
   transf_b = Button(cw, text='Переключить', command=lambda ch=channel: transfer_window(ch))
   transf_b.grid(row=0,column=3)
 
-  k = Label(cw, text='Магазин:')
+  cw.client = StringVar(value=callerid)
+
+  k = Label(cw, text='Клиент:')
   k.grid(row=1, column=0)
-  k = Label(cw, text=shops.by_dest.get(destination, ["Нет данных"])[0])
+  k = Entry(cw, textvariable=cw.client)
   k.grid(row=1, column=1)
 
+
+  cw.shopname = StringVar(value=shop_info[0])
+
+  k = Label(cw, text='Магазин:')
+  k.grid(row=2, column=0)
+  k = Label(cw, textvariable=cw.shopname)
+  k.grid(row=2, column=1)
+
+  cw.tag = StringVar()
+
   k = Label(cw, text="Тэг")
-  k.grid(row=2,column=0)
-  k = OptionMenu(cw, StringVar(), *call_tags)
-  k.grid(row=2,column=1, columnspan=3, sticky=W)
+  k.grid(row=4,column=0)
+  k = OptionMenu(cw, cw.tag, *call_tags)
+  k.grid(row=4,column=1, columnspan=3, sticky=W)
 
   k = Label(cw, text="Комментарий")
-  k.grid(row=3,column=0)
+  k.grid(row=5,column=0)
   k = Text(cw, height=3, width=24)
-  k.grid(row=3,column=1, columnspan=3)
+  k.grid(row=5,column=1, columnspan=3)
 
-  print("Shop:", shops.by_dest.get(destination, ["Нет данных"]))
-
-  
   close_btn = Button(cw, text="Завершено", command = lambda: close_call_window(cw))
-  close_btn.grid(row=5,column=0)
+  close_btn.grid(row=6,column=0)
   cw.protocol("WM_DELETE_WINDOW", lambda: close_call_window(cw))
 
   x, y = calculate_position(len(call_windows))
@@ -129,15 +138,27 @@ def add_call_window(callerid, destination, operator, channel):
   traceback.print_exc()
   return None, None
 
-def open_shop_doc(destination):
-  for page in shops.by_dest.get(destination, [None,[]])[1]:
+def update_call_window(cw, dial):
+  print("*",dial)
+  cw.shopname.set(dial)
+  print("***",dial)
+
+def open_shop_doc(shop_info):
+  page = shop_info[1]
+  if page:
     print("Open", page)
     os.system('start '+page)
-#  os.system('start https://google.com')
+  else:
+    print("no script page")
+#    os.system('start https://google.com')
 
 
 def close_call_window(window):
   global call_windows
+  if not window.tag.get():
+    return False
+  print("CLOSE", window.tag.get(), window.rec_uid)
+
   #print(id(window))
   pos = 0
   for w in call_windows:
@@ -182,6 +203,14 @@ from asterisk.ami import *
 client = AMIClient(address=asterisk_conf["address"], port=asterisk_conf["port"])
 client.login(username=asterisk_conf["username"], secret=asterisk_conf["secret"])
 
+def unsip(n):
+  # remove sip prefix and normalize number
+  _,n = n.split("/",1)
+#  print("unsip", repr(n))
+  if len(n)==11 and n[0]=="7":
+    n="+"+n
+  return n
+
 calls = {}
 myext = set((asterisk_conf["ext"],))
 state = []
@@ -190,11 +219,13 @@ def event_listener(event,**kwargs):
   try:
     global calls, myext, state
     global show_window, hide_window
-    print(event.name)
-    #print(repr(event.name), calls, event.keys)
+    global shops
+    if event.name!="Registry" and event.name!="PeerStatus":
+      print(event.name)
+#    print("---", repr(event.name), event.keys, calls)
 
     if event.name=="Newchannel":
-      print("Newchannel", event.keys) #["Uniqueid"])
+      print("\\", event.keys) #["Uniqueid"])
       calls[event.keys["Uniqueid"]] = {}
       calls[event.keys["Uniqueid"]]["callerid"] = event.keys["CallerIDNum"]
       calls[event.keys["Uniqueid"]]["destination"] = event.keys["Exten"]
@@ -205,30 +236,66 @@ def event_listener(event,**kwargs):
       callerchan = event.keys.get("UniqueID") # get info for calling line here
       calledchan = event.keys.get("DestUniqueID") # attach window here
       subevt = event.keys.get("SubEvent")
+      print("\\", subevt, dial, "[%s->%s]"%(callerchan, calledchan))
       if subevt=="Begin":
         calls[callerchan]["calleduid"] = calledchan
-        print("call to", dial)
+        lbr = calls[callerchan].get("localbridge")
+        print("call to", dial, "local bridge to %s"%lbr if lbr else '')
+        if lbr:
+          print("bridged:", calls[lbr])
+          lbrcalleduid=calls[lbr].get("calleduid")
+          callee = calls.get(lbrcalleduid)
+          print("  callee:", callee)
+          if callee: 
+            sv = callee.get("statusvar")
+            if sv:
+              sv.set("Dial")
+            sw = callee.get("window")
+            if sw:
+              callee_n = unsip(dial)
+              sw.client.set(callee_n)
+              sw.rec_uid = callerchan
+              # update client info in window
+#              update_call_window(sw, dial)
+
+        # bridged call: use ConnectedLineNum
+        # else: use callerchan's destination
+        if lbr:
+          shop_phone = event.keys.get("ConnectedLineNum")
+          print("Shop phone=", shop_phone)
+          shop_info = shops.by_phone.get(shop_phone, ["Нет данных", ""])
+        else:
+          shop_ext = calls[callerchan].get("destination", "")
+          print("Shop ext=", shop_ext)
+          shop_info = shops.by_dest.get(shop_ext, ["Нет данных", ""])
+
         if dial in myext:
-          cw, sv = add_call_window(calls[callerchan].get("callerid", ""), 
-					calls[callerchan].get("destination", ""),
+          print("Create status window on channel", calledchan)
+          cw, sv = add_call_window("+"+calls[callerchan].get("callerid", ""), 
+					shop_info,
 					dial, calls[callerchan]["channel"])
           calls[calledchan]["window"] = cw
+          cw.shop_info = shop_info
+          cw.rec_uid = callerchan
           calls[calledchan]["statusvar"] = sv
           calls[calledchan]["calleruid"] = callerchan
           sv.set("Ringing")
 
     elif event.name=="Newstate":
+      print("\\", event.keys.get("Uniqueid"), event.keys.get("ChannelState"))
       if event.keys.get("ChannelState")=='6':
         #print(event.keys)
         uid=event.keys.get("Uniqueid")
-        print("call", uid, "is Up")
+        print("call", uid, "is Up", calls[uid])
         sv=calls[uid].get("statusvar")
+        sw=calls[uid].get("window")
         if sv:
           sv.set("Up")
           try:
             calleruid = calls[uid]["calleruid"]
             print("caller:", calleruid)
-            open_shop_doc(calls[calleruid].get("destination", ""))
+            if sw:
+              open_shop_doc(sw.shop_info)
           except:
             print("could not open script page")
           #ch=event.keys.get("Channel")
@@ -236,17 +303,40 @@ def event_listener(event,**kwargs):
           #calls[uid]["channel"] = ch
 
     elif event.name=="Hangup":
-      print("Hangup", event.keys["Uniqueid"])
-      c = calls.pop(event.keys["Uniqueid"])
+      uid = event.keys["Uniqueid"]
+      print("\\", uid)
+      c = calls.pop(uid)
       #print(event.keys)
       cw = c.get("window")
       sv = c.get("statusvar")
       if sv:
         sv.set("Ended")
+      lbr = c.get("localbridge")
+      if lbr:
+        print("unbridge", lbr)
+        calls[lbr].pop("localbridge")
+        # or may be delete from list?
 
     elif event.name=="Shutdown":
       print("shutdown")
       state.append("shutdown")
+
+    elif event.name=="Masquerade":
+        print(event.keys)
+
+    elif event.name=="Bridge":
+        print(event.keys)
+
+    elif event.name=="Rename":
+        print(event.keys)
+
+    elif event.name=="LocalBridge":
+      uid1 = event.keys["Uniqueid1"]
+      uid2 = event.keys["Uniqueid2"]
+      print("\\  %s<->%s"%(uid1, uid2))
+      calls[uid1]["localbridge"] = uid2
+      calls[uid2]["localbridge"] = uid1
+      # may be we need lists here?
 
   except:
     traceback.print_exc()
@@ -272,6 +362,7 @@ class ShopsData:
 
 shops = ShopsData()
 shops.load()
+#print(shops.by_dest); exit()
 
 call_tags = []
 for tag_id, tag_name in json.load(urllib.request.urlopen(asterisk_conf["data"]+"?what=tags")):
