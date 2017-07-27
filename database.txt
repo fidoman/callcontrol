@@ -101,3 +101,8 @@ shop_ext varchar,
 shop_ext_tmstmp timestamp
 );
 
+
+create user cc_data login;
+grant select on shops to cc_data;
+create view sip_ext (myext, phone) as select su_myext, su_phone from sip_users;
+grant select on sip_ext to cc_data;
