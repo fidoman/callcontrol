@@ -125,7 +125,7 @@ exten = %(ext)s,hint,SIP/%(ext)s"""
     print(";inbound calls")
     TPL="""
 exten => %(prov_ext)s,1,Set(CALLERID(num)=+${CALLERID(num)})
-exten => %(prov_ext)s,2,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}-+-${CALLERID(num)}-+-${EXTEN}-+-${EPOCH},m)
+exten => %(prov_ext)s,2,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN},m)
 exten => %(prov_ext)s,3,Set(CALLERID(name)=%(destiname)s)
 exten => %(prov_ext)s,n,Dial(SIP/%(pri_manager)s)
 ; call primary manager
