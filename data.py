@@ -16,6 +16,18 @@ form = cgi.FieldStorage()
 dbconn = json.load(open("database.json"))
 db = postgresql.open(**dbconn)
 
+def check_user(ext, pw):
+  allowed = True
+  for (c,) in db.prepare("select count(*) from extensions where ext_n=$1 and ext_pw=$2")(ext, pw):
+    if c==1:
+      allowed = True
+  if allowed:
+    pass
+  else:
+    raise Exception("operator not found")
+
+
+
 what = form.getvalue("what")
 
 out = None
@@ -32,7 +44,12 @@ try:
     for i, t in db.prepare("select tag_id, tag_name from tags")():
       out.append((i, t))
 
-
+  elif what == "config":
+    out = {}
+    ext = form.getvalue("ext")
+    pw = form.getvalue("pw")
+    check_user(ext, pw)
+    out["name"] = ''
 
 except Exception as e:
   print("Content-type: text/plain\n")

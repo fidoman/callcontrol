@@ -113,3 +113,23 @@ tag_name varchar unique
 );
 // populate with call tags
 grant select on tags to cc_data;
+
+
+create table call_status (
+  cs_id bigserial primary key,
+  cs_op integer references operators(op_id),
+  cs_phone varchar,
+  cs_order varchar,
+  cs_note varchar,
+  cs_tag integer references tags (tag_id)
+);
+
+
+create or replace function check_ext_pw(ext varchar, pw varchar) returns integer as $$
+declare
+  r integer;
+begin
+  select count(*) into r from extensions where ext_n=ext and ext_pw=pw;
+  return r;
+end;
+$$ language plpgsql;
