@@ -10,8 +10,11 @@ srcpath = os.path.dirname(sys.argv[0])
 
 CONF = "microsip.ini"
 
+ASTERCONF = "asterisk.json"
+asterdstpath = os.path.expandvars(r"%APPDATA%\callcontrol")
+
 def save():
-  global srcpath, dstpath, root, srv, ext, pw, CONF
+  global srcpath, dstpath, asterdstpath, root, srv, ext, pw, CONF, ASTERCONF
   str_srv = srv.get()
   str_ext = ext.get()
   str_pw = pw.get()
@@ -28,14 +31,31 @@ def save():
     print("error:", repr(resp.read(1000)))
     root.bell()
     return
-  conf = json.load(resp)
-  # get manager user/pass from server
+  confdata = json.load(resp)
+  print(confdata)
 
+  # get manager user/pass from server
   os.makedirs(dstpath, exist_ok = True)
   tpl = open(os.path.join(srcpath, CONF)).read()
-  conf = tpl % {"name": conf["name"], "asterisk": str_srv, "extension": str_ext, "password": str_pw}
+  conf = tpl % {"name": confdata["name"], "asterisk": str_srv, "extension": str_ext, "password": str_pw}
   dst = open(os.path.join(dstpath, CONF), "w")
   dst.write(conf)
+
+  os.makedirs(asterdstpath, exist_ok = True)
+  tpl = open(os.path.join(srcpath, ASTERCONF)).read()
+  conf = tpl % {
+    "manager_host": confdata["manager_host"], 
+    "manager_port": confdata["manager_port"], 
+    "manager_user": confdata["manager_user"], 
+    "manager_pw": confdata["manager_pw"], 
+    "ext": str_ext,
+    "pw": str_pw,
+    "query_str": q_url
+  }
+  dst = open(os.path.join(asterdstpath, ASTERCONF), "w")
+  dst.write(conf)
+
+
   root.quit()
 
 root = Tk()
