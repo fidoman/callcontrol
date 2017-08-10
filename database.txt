@@ -133,3 +133,5 @@ begin
   return r;
 end;
 $$ language plpgsql;
+
+grant EXECUTE on function check_ext_pw(varchar, varchar) to cc_data;
