@@ -1,6 +1,7 @@
 import os
 import sys
 import urllib.request
+import urllib.parse
 import json
 from tkinter import *
 
@@ -21,14 +22,18 @@ def save():
   q_url=f"https://{str_srv}/cgi-bin/data.py"
 
   # urlencode ext and pw
-  conf = json.load(urllib.request.urlopen(f"{q_url}?what=config?ext={}&pw={}"))
-  print(conf)
+  urlparams = urllib.parse.urlencode({'what': 'config', 'ext': str_ext, 'pw': str_pw})
+  resp = urllib.request.urlopen(f"{q_url}?{urlparams}")
+  if resp.headers.get_content_type() != 'application/json':
+    print("error:", repr(resp.read(1000)))
+    root.bell()
+    return
+  conf = json.load(resp)
   # get manager user/pass from server
-  return
 
   os.makedirs(dstpath, exist_ok = True)
   tpl = open(os.path.join(srcpath, CONF)).read()
-  conf = tpl % {"extension": str_ext, "password": str_pw}
+  conf = tpl % {"name": conf["name"], "asterisk": str_srv, "extension": str_ext, "password": str_pw}
   dst = open(os.path.join(dstpath, CONF), "w")
   dst.write(conf)
   root.quit()
