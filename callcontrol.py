@@ -8,7 +8,11 @@ import urllib.request
 
 from statuswindow import status_window_operation
 
-from config import asterisk_conf
+from config import asterisk_conf, call_log_dir
+
+from persistqueue import Queue
+call_log = Queue(call_log_dir)
+
 
 root = Tk()
 screen_w, screen_h = root.winfo_screenwidth(), root.winfo_screenheight()
@@ -132,7 +136,6 @@ def add_call_window(callerid, shop_info, operator, channel):
   cw.geometry('%dx%d+%d+%d'%(window_w, window_h, x, y))
   call_windows.append(cw)
 
-
   return cw, statusvar
  except:
   traceback.print_exc()
@@ -154,10 +157,22 @@ def open_shop_doc(shop_info):
 
 
 def close_call_window(window):
-  global call_windows
+  global call_windows, call_log
   if not window.tag.get():
     return False
   print("CLOSE", window.tag.get(), window.rec_uid)
+  call_log.put({
+	"tag": window.tag.get(), 
+	"operator": 
+	"rec_uid": window.rec_uid, 
+	"client_phone":
+        "shop_phone":
+        "shop_name":
+        "ring_time":
+        "answer_time":
+        "end_time":
+        "close_time": datetime.now()
+  })
 
   #print(id(window))
   pos = 0
@@ -270,16 +285,19 @@ def event_listener(event,**kwargs):
           shop_info = shops.by_dest.get(shop_ext, ["Нет данных", ""])
 
         if dial in myext:
-          print("Create status window on channel", calledchan)
-          cw, sv = add_call_window("+"+calls[callerchan].get("callerid", ""), 
+          if len(calls[callerchan].get("callerid", "")) == 3:
+            print("internal call from", calls[callerchan].get("callerid", ""))
+          else:
+            print("Create status window on channel", calledchan)
+            cw, sv = add_call_window("+"+calls[callerchan].get("callerid", ""), 
 					shop_info,
 					dial, calls[callerchan]["channel"])
-          calls[calledchan]["window"] = cw
-          cw.shop_info = shop_info
-          cw.rec_uid = callerchan
-          calls[calledchan]["statusvar"] = sv
-          calls[calledchan]["calleruid"] = callerchan
-          sv.set("Ringing")
+            calls[calledchan]["window"] = cw
+            cw.shop_info = shop_info
+            cw.rec_uid = callerchan
+            calls[calledchan]["statusvar"] = sv
+            calls[calledchan]["calleruid"] = callerchan
+            sv.set("Ringing")
 
     elif event.name=="Newstate":
       print("\\", event.keys.get("Uniqueid"), event.keys.get("ChannelState"))
@@ -368,12 +386,9 @@ call_tags = []
 for tag_id, tag_name in json.load(urllib.request.urlopen(asterisk_conf["data"]+"?what=tags")):
   call_tags.append(tag_name)
 
-print(call_tags)
-
+#print(call_tags)
 #print(dir(root))
-
 #print(root.winfo_screenwidth(), root.winfo_screenheight())
-
 #bgthread = threading.Thread(target = lambda: bg_task(root))
 #bgthread.start()
 

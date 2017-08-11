@@ -12,7 +12,7 @@ exit 0
 echo elevated
 
 echo installing python modules
-pip install asterisk-ami
+pip install asterisk-ami persist-queue
 if errorlevel 1 goto fail
 
 echo run configurator
