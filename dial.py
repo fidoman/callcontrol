@@ -15,7 +15,7 @@ from tkinter import *
 
 from order import order_window
 
-asterisk_conf = json.load(open("asterisk.json"))
+from config import asterisk_conf
 shops = json.load(urllib.request.urlopen(asterisk_conf["data"]+"?what=shops"))
 
 dialw = Tk()

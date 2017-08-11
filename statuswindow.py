@@ -4,7 +4,7 @@ from tkinter import *
 from asterisk.ami import *
 import traceback
 
-asterisk_conf = json.load(open("asterisk.json"))
+from config import asterisk_conf
 
 def text_status(s):
   statuses = { '0': "FREE", '2': "BUSY", '8': "RING", None: "UNKN", '-1': "OFF" }

@@ -8,7 +8,7 @@ import urllib.request
 
 from statuswindow import status_window_operation
 
-asterisk_conf = json.load(open("asterisk.json"))
+from config import asterisk_conf
 
 root = Tk()
 screen_w, screen_h = root.winfo_screenwidth(), root.winfo_screenheight()
@@ -34,7 +34,7 @@ def list_commands():
     'ListCommands',
   )
   client.send_action(action, callback=print)
-  client.logoff()
+  #client.logoff()
 
 
 

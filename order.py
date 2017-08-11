@@ -4,7 +4,7 @@ import json
 from tkinter import *
 from asterisk.ami import *
 
-asterisk_conf = json.load(open("asterisk.json"))
+from config import asterisk_conf
 
 """ get extension of client registered with same IP - do not work over NAT """
 
