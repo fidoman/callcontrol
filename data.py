@@ -67,8 +67,8 @@ try:
 
 except Exception as e:
   print("Content-type: text/plain\n")
-  print("error", type(e)) #, e.code, e.creator)
-  print(traceback.format_exc())
+  print("error:", str(e)) #, e.code, e.creator)
+  #print(traceback.format_exc())
   exit()
 
 print("Content-type: application/json\n")
