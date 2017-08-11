@@ -4,11 +4,10 @@ import threading
 import os
 import json
 import traceback
-import urllib.request
 
 from statuswindow import status_window_operation
 
-from config import asterisk_conf, call_log_dir
+from config import asterisk_conf, call_log_dir, load_data
 
 from persistqueue import Queue
 call_log = Queue(call_log_dir)
@@ -93,6 +92,12 @@ def add_call_window(callerid, shop_info, operator, channel):
   cw.wm_attributes('-topmost', 1)
   cw.title("%s->%s [%s] %s"%(callerid, shop_info[0], operator, channel))
 
+  cw.ring_time = None
+  cw.answer_time = None
+  cw.end_time = None
+  cw.operator = operator # save for logging
+  cw.shopphone = shop_info[2]
+
   sv_label = Label(cw, text="Состояние")
   statusvar = StringVar()
   sv_data = Label(cw, textvariable = statusvar)
@@ -108,7 +113,6 @@ def add_call_window(callerid, shop_info, operator, channel):
   k = Entry(cw, textvariable=cw.client)
   k.grid(row=1, column=1)
 
-
   cw.shopname = StringVar(value=shop_info[0])
 
   k = Label(cw, text='Магазин:')
@@ -123,10 +127,11 @@ def add_call_window(callerid, shop_info, operator, channel):
   k = OptionMenu(cw, cw.tag, *call_tags)
   k.grid(row=4,column=1, columnspan=3, sticky=W)
 
+
   k = Label(cw, text="Комментарий")
   k.grid(row=5,column=0)
-  k = Text(cw, height=3, width=24)
-  k.grid(row=5,column=1, columnspan=3)
+  cw.note = Text(cw, height=3, width=24)
+  cw.note.grid(row=5,column=1, columnspan=3)
 
   close_btn = Button(cw, text="Завершено", command = lambda: close_call_window(cw))
   close_btn.grid(row=6,column=0)
@@ -163,14 +168,15 @@ def close_call_window(window):
   print("CLOSE", window.tag.get(), window.rec_uid)
   call_log.put({
 	"tag": window.tag.get(), 
-	"operator": 
+	"operator": window.operator,
 	"rec_uid": window.rec_uid, 
-	"client_phone":
-        "shop_phone":
-        "shop_name":
-        "ring_time":
-        "answer_time":
-        "end_time":
+	"client_phone": window.client.get(),
+        "shop_phone": window.shopphone,
+        "shop_name": window.shopname.get(),
+        "ring_time": window.ring_time,
+        "answer_time": window.answer_time,
+        "end_time": window.end_time,
+        "note": window.note.get(1.0, END),
         "close_time": datetime.now()
   })
 
@@ -367,15 +373,14 @@ client.add_event_listener(event_listener)
 class ShopsData:
   def __init__(self):
     global asterisk_conf
-    self.shops_url = asterisk_conf["data"]+"?what=shops"
     self.by_phone = {}
     self.by_dest = {}
 
   def load(self):
-    for s in json.load(urllib.request.urlopen(self.shops_url)):
+    for s in load_data("shops"):
       #print(s) 
-      self.by_phone[s[1]] = (s[0], s[2])
-      self.by_dest[s[3]] = (s[0], s[2])
+      self.by_phone[s[1]] = self.by_dest[s[3]] = (s[0], s[2], s[1])
+      # name, script, phone
 
 
 shops = ShopsData()
@@ -383,7 +388,7 @@ shops.load()
 #print(shops.by_dest); exit()
 
 call_tags = []
-for tag_id, tag_name in json.load(urllib.request.urlopen(asterisk_conf["data"]+"?what=tags")):
+for tag_id, tag_name in load_data("tags"):
   call_tags.append(tag_name)
 
 #print(call_tags)

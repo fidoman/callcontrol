@@ -10,13 +10,13 @@
 import re
 import json
 import traceback
-import urllib.request
 from tkinter import *
 
 from order import order_window
 
-from config import asterisk_conf
-shops = json.load(urllib.request.urlopen(asterisk_conf["data"]+"?what=shops"))
+from config import asterisk_conf, load_data
+
+shops = load_data("shops")
 
 dialw = Tk()
 
