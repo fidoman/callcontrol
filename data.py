@@ -30,11 +30,15 @@ def check_user(ext, pw):
 
 
 
-what = form.getvalue("what")
 
 out = None
 
 try:
+  what = form.getvalue("what")
+  ext = form.getvalue("ext")
+  pw = form.getvalue("pw")
+  check_user(ext, pw)
+
   if what == "shops":
     out=[]
     for n, ph, scr, ext in db.prepare("select shop_name, shop_phone, shop_script, myext from shops, sip_ext"
@@ -48,9 +52,6 @@ try:
 
   elif what == "config":
     out = {}
-    ext = form.getvalue("ext")
-    pw = form.getvalue("pw")
-    check_user(ext, pw)
     out["name"] = socket.gethostname()
     out["manager_user"] = "callcontrol"
 
@@ -63,12 +64,11 @@ try:
     out["manager_host"] = socket.gethostname()
     out["manager_port"] = conf['general']['port']
 
-    
 
 except Exception as e:
   print("Content-type: text/plain\n")
-  print("error", type(e)) #, e.code, e.creator)
-  print(traceback.format_exc())
+  print("error:", str(e)) #, e.code, e.creator)
+  #print(traceback.format_exc())
   exit()
 
 print("Content-type: application/json\n")

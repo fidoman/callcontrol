@@ -23,7 +23,7 @@ Keep connection, reestablish if needed
 #  def __init__(self):
 #    self.conndata=
 
-PWsym="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-+.,<>[]{}()`~!?@#$%^&*/_="
+PWsym="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-+.,[]{}()`~!?@#$%^&*/_="
 def gen_pw(l):
   s=""
   for z in range(l):
