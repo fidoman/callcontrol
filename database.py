@@ -64,7 +64,7 @@ if __name__=="__main__":
     TPL="""
 [%(ext)s]
 transport=tls
-encryption=yes
+encryption=no
 type=friend
 context=from-internal
 username=%(ext)s
