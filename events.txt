@@ -1,0 +1,45 @@
+.25 
+.26 Ring -> 192
+
+.25 = callerid גûחûגאולמדמ םמלונא
+
+25<->26 localbridge
+
+27  = callerid גûחûגאולמדמ םמלונא
+192 -> status 8
+
+26 dial to internal SIP/192-00000013
+27 -> status Up
+192 -> status 2
+26 -> Up
+
+25 -> Up
+bridge 26,27
+monitor start .25
+
+.28 down
+28  = callerid גûחûגאולמדמ םמלונא
+
+25 -> dial external number
+masq Local/192 - SIP/192-00000013
+.27 rename SIP/192-00000013 -> SIP/192-00000013<MASQ>
+.25 rename Local/192 - SIP/192-00000013
+.27 rename SIP/192-00000013<MASQ> - Local/192<ZOMBIE>
+
+.25 = callerid 
+
+bridge unlink 26 27
+hangupreq 26
+hangup 27
+
+.26 dial answer
+
+soft hangup req 26
+hangup 26
+
+.28 ringing
+.28 up
+bridge 25, 28
+
+hangup req 25
+unlink 25 28
