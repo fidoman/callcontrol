@@ -15,7 +15,7 @@
 
 25 -> Up
 bridge 26,27
-monitor start .25
+monitor start .25 -> имя файла с записью
 
 .28 down
 28  = callerid вызываемого номера
@@ -43,3 +43,4 @@ bridge 25, 28
 
 hangup req 25
 unlink 25 28
+---
