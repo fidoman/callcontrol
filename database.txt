@@ -135,3 +135,6 @@ end;
 $$ language plpgsql;
 
 grant EXECUTE on function check_ext_pw(varchar, varchar) to cc_data;
+
+-- специальный тэг
+insert into tags (tag_name) values ('Без записи');
