@@ -4,6 +4,7 @@ import threading
 import os
 import json
 import traceback
+from datetime import datetime
 
 from statuswindow import status_window_operation
 
@@ -177,7 +178,7 @@ def close_call_window(window):
         "answer_time": window.answer_time,
         "end_time": window.end_time,
         "note": window.note.get(1.0, END),
-        "close_time": datetime.now()
+        "close_time": datetime.utcnow()
   })
 
   #print(id(window))
@@ -207,15 +208,22 @@ def close_call_window(window):
 #show_window = lambda: root.deiconify(); root.lift(); root.wm_attributes('-topmost', 1)
 #hide_window = lambda: root.wm_withdraw()
 
-def bg_task(root):
+from urllib import parse
+
+def bg_task():
   # connect to asterisk and wait for incoming data
-  global show_window
-  while True:
+  global bg_run, asterisk_conf, root, show_window, call_log
+  while bg_run:
     time.sleep(2)
+    if call_log.qsize():
+      z = call_log.get()
+      print(repr(parse.urlencode(z)))
+      call_log.put(z)
+
 #    root.iconify()
-    root.wm_withdraw()
-    time.sleep(1)
-    show_window()
+#    root.wm_withdraw()
+#    time.sleep(1)
+#    show_window()
 
 # *** connecting asterisk ***
 
@@ -236,6 +244,9 @@ calls = {}
 myext = set((asterisk_conf["ext"],))
 state = []
 
+logf = open("events3.log", "w")
+#logf = None
+
 def event_listener(event,**kwargs):
   try:
     global calls, myext, state
@@ -243,7 +254,10 @@ def event_listener(event,**kwargs):
     global shops
     if event.name!="Registry" and event.name!="PeerStatus":
       print(event.name)
-#    print("---", repr(event.name), event.keys, calls)
+    if logf:
+      logf.write("--- " + repr(event.name) + "\n")
+      logf.write("  " + str(event.keys) + "\n")
+      logf.write(".. " + repr(calls)+"\n\n")
 
     if event.name=="Newchannel":
       print("\\", event.keys) #["Uniqueid"])
@@ -251,6 +265,11 @@ def event_listener(event,**kwargs):
       calls[event.keys["Uniqueid"]]["callerid"] = event.keys["CallerIDNum"]
       calls[event.keys["Uniqueid"]]["destination"] = event.keys["Exten"]
       calls[event.keys["Uniqueid"]]["channel"] = event.keys["Channel"]
+
+    if event.name=="Rename":
+      print("\\", event.keys) #["Uniqueid"])
+      calls[event.keys["Uniqueid"]]["channel"] = event.keys["Newname"]
+
 
     elif event.name=="Dial":
       dial = event.keys.get("Dialstring")
@@ -294,15 +313,15 @@ def event_listener(event,**kwargs):
           if len(calls[callerchan].get("callerid", "")) == 3:
             print("internal call from", calls[callerchan].get("callerid", ""))
           else:
-            print("Create status window on channel", calledchan)
+            print("Create status window on channel", callerchan)
             cw, sv = add_call_window("+"+calls[callerchan].get("callerid", ""), 
 					shop_info,
 					dial, calls[callerchan]["channel"])
-            calls[calledchan]["window"] = cw
+            calls[callerchan]["window"] = cw
             cw.shop_info = shop_info
             cw.rec_uid = callerchan
-            calls[calledchan]["statusvar"] = sv
-            calls[calledchan]["calleruid"] = callerchan
+            calls[callerchan]["statusvar"] = sv
+            calls[callerchan]["calleduid"] = calledchan
             sv.set("Ringing")
 
     elif event.name=="Newstate":
@@ -394,13 +413,18 @@ for tag_id, tag_name in load_data("tags"):
 #print(call_tags)
 #print(dir(root))
 #print(root.winfo_screenwidth(), root.winfo_screenheight())
-#bgthread = threading.Thread(target = lambda: bg_task(root))
-#bgthread.start()
+
+bgthread = threading.Thread(target=bg_task)
+bg_run = True
+bgthread.start()
 
 #root.wm_withdraw()
 root.mainloop()
 #time.sleep(10)
 
 #root.destroy()
+bg_run = False
 root.quit()
+
+bgthread.join()
 
