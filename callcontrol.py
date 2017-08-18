@@ -257,7 +257,7 @@ def event_listener(event,**kwargs):
     if logf:
       logf.write("--- " + repr(event.name) + "\n")
       logf.write("  " + str(event.keys) + "\n")
-      logf.write(".. " + repr(calls)+"\n\n")
+      #logf.write(".. " + repr(calls)+"\n\n")
 
     if event.name=="Newchannel":
       print("\\", event.keys) #["Uniqueid"])
