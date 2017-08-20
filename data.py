@@ -9,6 +9,8 @@ import traceback
 import socket
 import configparser
 #import secrets
+import itertools, random
+import urllib.parse
 
 #cgitb.enable(display=0, logdir="/var/log/ccdata")
 
@@ -67,48 +69,93 @@ try:
 
   elif what == "log_call":
     # save to database
-    tag = form.get_value("tag")
+    tag = form.getvalue("tag")
 
-    for (tag_id,) in db.prepare("select tag_id from tags where tag_name=$1"):
+    for (tag_id,) in db.prepare("select tag_id from tags where tag_name=$1")(tag):
       break
     else:
       raise Exception("no such tag: "+repr(tag))
 
-    operator = form.get_value("operator")
-    op_id = int(operator)
+    operator = form.getvalue("operator")
+    for (op_id, op_name) in db.prepare("select op_id, op_name from operators where op_ext=$1")(operator):
+      break
+    else:
+      op_id = op_name = None
 
-    rec_uid = form.get_value("rec_uid")
+    rec_uid = form.getvalue("rec_uid")
 
-    for _ in db.prepare("select rec_uid from call_log where cl_rec_uid=$1")(rec_uid):
+    for _ in db.prepare("select cl_rec_uid from call_log where cl_rec_uid=$1")(rec_uid):
       out = "Exists"
       break
     else:
-      client_phone = form.get_value("client_phone")
-      shop_phone = form.get_value("shop_phone")
-      shop_name = form.get_value("shop_name")
-      ring_time = form.get_value("ring_time")
-      answer_time = form.get_value("answer_time")
-      end_time = form.get_value("end_time")
-      note = form.get_value("note")
-      close_time = form.get_value("close_time")
+      client_phone = form.getvalue("client_phone")
+      shop_phone = form.getvalue("shop_phone")
+      shop_name = form.getvalue("shop_name")
+      ring_time = form.getvalue("ring_time")
+      if ring_time == 'None': ring_time = None
+      answer_time = form.getvalue("answer_time")
+      if answer_time == 'None': answer_time = None
+      end_time = form.getvalue("end_time")
+      if end_time == 'None': end_time = None
+
+      note = form.getvalue("note")
+
+      close_time = form.getvalue("close_time")
+      if close_time == 'None': close_time = None
     
       #rand = secrets.token_urlsafe(32)
       rand = ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') 
-		for x in itertools.repeat(None, 10)])
+		for x in itertools.repeat(None, 32)])
+
+#      raise Exception(repr(ring_time))
 
       db.prepare("insert into call_log ("
-		"cl_rand, cl_tag, cl_operator, cl_rec_uid, cl_client_phone, cl_shop_phone, "
+		"cl_rand, cl_tag, cl_operator, cl_operator_name, cl_rec_uid, cl_client_phone, cl_shop_phone, "
 		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note) "
-		"values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)")\
-	(rand, tag_id, op_id, rec_uid, client_phone, shop_phone, shop_name, ring_time, answer_time,
+		"values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)")\
+	(rand, tag_id, op_id, op_name, rec_uid, client_phone, shop_phone, shop_name, ring_time, answer_time,
 	end_time, close_time, note)
 
       out = "Added"
 
+  elif what == "list_calls":
+    """ show call_log table. Use ?what=get_rec&code=rand url's as links to records """
+    print("Content-type: text/html; charset=utf-8\n")
+    print("<table>")
+    import codecs
+    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+    for (shop_name, operator_name, client_phone, close_time, rand) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand from call_log"):
+      if rand:
+        params = urllib.parse.urlencode({"what": "get_rec", "ext": ext, "pw": pw, "code": rand.strip()})
+        a1 = "<a href=\"/cgi-bin/data.py?"+params+"\">"
+        a2 = "</a>"
+      else:
+        a1=a2=''
+
+      print(("<tr>""<td>"+a1+(close_time or '')+a2+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+"</tr>"))
+
+    print("</table>")
+    exit()
+
+  elif what == "get_rec":
+    """ send audio file by code """
+    for (rec_uid,) in db.prepare("select cl_rec_uid from call_log where cl_rand=$1")(form.getvalue("code")):
+      import os
+      out = [rec_uid]
+      for x in os.walk("/var/spool/asterisk/monitor"):
+        for fn in x[2]:
+          if fn.find(rec_uid)!=-1:
+            sys.stdout.buffer.write(b"Content-type: audio/wav\n\n")
+            sys.stdout.buffer.write(open(os.path.join(x[0], fn), "rb").read())
+            exit()
+      break
+    else:
+      out = None
+
 except Exception as e:
   print("Content-type: text/plain\n")
   print("error:", str(e)) #, e.code, e.creator)
-  #print(traceback.format_exc())
+  print(traceback.format_exc())
   exit()
 
 print("Content-type: application/json\n")
