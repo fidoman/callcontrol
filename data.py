@@ -8,7 +8,7 @@ import postgresql
 import traceback
 import socket
 import configparser
-import secrets
+#import secrets
 
 #cgitb.enable(display=0, logdir="/var/log/ccdata")
 
@@ -92,7 +92,10 @@ try:
       note = form.get_value("note")
       close_time = form.get_value("close_time")
     
-      rand = secrets.token_urlsafe(32)
+      #rand = secrets.token_urlsafe(32)
+      rand = ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') 
+		for x in itertools.repeat(None, 10)])
+
       db.prepare("insert into call_log ("
 		"cl_rand, cl_tag, cl_operator, cl_rec_uid, cl_client_phone, cl_shop_phone, "
 		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note) "
