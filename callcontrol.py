@@ -208,17 +208,42 @@ def close_call_window(window):
 #show_window = lambda: root.deiconify(); root.lift(); root.wm_attributes('-topmost', 1)
 #hide_window = lambda: root.wm_withdraw()
 
-from urllib import parse
+import urllib.parse
+import urllib.request
 
 def bg_task():
   # connect to asterisk and wait for incoming data
   global bg_run, asterisk_conf, root, show_window, call_log
+  note_empty = False
+  print("start bg_task")
   while bg_run:
     time.sleep(2)
     if call_log.qsize():
+      note_empty = True
       z = call_log.get()
-      print(repr(parse.urlencode(z)))
-      call_log.put(z)
+      try:
+        print(repr(urllib.parse.urlencode(z)))
+        cmd_params = urllib.parse.urlencode({'what': 'log_call', 'ext': asterisk_conf["ext"], 'pw': asterisk_conf["pw"]})
+        data_params = urllib.parse.urlencode(z)
+        url = asterisk_conf["data"] + "?" + cmd_params + "&" + data_params
+        resp = urllib.request.urlopen(url)
+        if resp.headers.get_content_type() != 'application/json':
+          print("error:", repr(resp.read(1000)))
+          call_log.put(z)
+          raise Exception("server did not return JSON data")
+        else:
+          print(resp.read(1000))
+
+      except Exception as e:
+        print(e)
+        print("queue drop", repr(z))
+
+      call_log.task_done()
+
+    else:
+      if note_empty:
+        print("queue is empty")
+        note_empty = False
 
 #    root.iconify()
 #    root.wm_withdraw()
