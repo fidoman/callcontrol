@@ -147,10 +147,6 @@ def add_call_window(callerid, shop_info, operator, channel):
   traceback.print_exc()
   return None, None
 
-def update_call_window(cw, dial):
-  print("*",dial)
-  cw.shopname.set(dial)
-  print("***",dial)
 
 def open_shop_doc(shop_info):
   page = shop_info[1]
@@ -208,17 +204,42 @@ def close_call_window(window):
 #show_window = lambda: root.deiconify(); root.lift(); root.wm_attributes('-topmost', 1)
 #hide_window = lambda: root.wm_withdraw()
 
-from urllib import parse
+import urllib.parse
+import urllib.request
 
 def bg_task():
   # connect to asterisk and wait for incoming data
   global bg_run, asterisk_conf, root, show_window, call_log
+  note_empty = False
+  print("start bg_task")
   while bg_run:
     time.sleep(2)
     if call_log.qsize():
+      note_empty = True
       z = call_log.get()
-      print(repr(parse.urlencode(z)))
-      call_log.put(z)
+      try:
+        print(repr(urllib.parse.urlencode(z)))
+        cmd_params = urllib.parse.urlencode({'what': 'log_call', 'ext': asterisk_conf["ext"], 'pw': asterisk_conf["pw"]})
+        data_params = urllib.parse.urlencode(z)
+        url = asterisk_conf["data"] + "?" + cmd_params + "&" + data_params
+        resp = urllib.request.urlopen(url)
+        if resp.headers.get_content_type() != 'application/json':
+          print("error:", repr(resp.read(1000)))
+          call_log.put(z)
+          raise Exception("server did not return JSON data")
+        else:
+          print(resp.read(1000))
+
+      except Exception as e:
+        print(e)
+        print("queue drop", repr(z))
+
+      call_log.task_done()
+
+    else:
+      if note_empty:
+        print("queue is empty")
+        note_empty = False
 
 #    root.iconify()
 #    root.wm_withdraw()
@@ -244,8 +265,8 @@ calls = {}
 myext = set((asterisk_conf["ext"],))
 state = []
 
-logf = open("events3.log", "w")
-#logf = None
+#logf = open("events3.log", "w")
+logf = None
 
 def event_listener(event,**kwargs):
   try:
@@ -275,75 +296,103 @@ def event_listener(event,**kwargs):
       dial = event.keys.get("Dialstring")
       callerchan = event.keys.get("UniqueID") # get info for calling line here
       calledchan = event.keys.get("DestUniqueID") # attach window here
+      chan = event.keys.get("Channel")
+      dest = event.keys.get("Destination")
       subevt = event.keys.get("SubEvent")
-      print("\\", subevt, dial, "[%s->%s]"%(callerchan, calledchan))
+      print(f"\\ {subevt} {dial}: {chan} [{callerchan}] -> {dest} [{calledchan}]")
+      print("++", event.keys)
+      print("caller:", calls.get(callerchan))
+      print("callee:", calls.get(calledchan))
       if subevt=="Begin":
         calls[callerchan]["calleduid"] = calledchan
-        lbr = calls[callerchan].get("localbridge")
-        print("call to", dial, "local bridge to %s"%lbr if lbr else '')
-        if lbr:
-          print("bridged:", calls[lbr])
-          lbrcalleduid=calls[lbr].get("calleduid")
-          callee = calls.get(lbrcalleduid)
-          print("  callee:", callee)
-          if callee: 
-            sv = callee.get("statusvar")
-            if sv:
-              sv.set("Dial")
-            sw = callee.get("window")
-            if sw:
-              callee_n = unsip(dial)
-              sw.client.set(callee_n)
-              sw.rec_uid = callerchan
-              # update client info in window
-#              update_call_window(sw, dial)
+        # classify call:
+        #   from external to operator
+        #   to external
+        #   other
+
+        if chan.startswith("SIP/sipout"):
+          print("call from sipout")
+          shop_sipout_ext = calls[callerchan]["destination"]
+          int_ext = dial
+          channel_of_interest = callerchan
+          external = calls[callerchan]["callerid"]
+        elif dial.startswith("sipout"):
+          print("call to sipout")
+          channel_of_interest = calledchan
+          int_ext = calls[callerchan]["destination"]
+          external = dial.split("/",1)[1]
+          # requre that all sipout channel are named as sipoutNNN
+          shop_sipout_ext = dial.split("/",1)[0][len("sipout"):]
+        else:
+          print("other call")
+          channel_of_interest = None
+          int_ext = None
+          shop_sipout_ext = None
+          external = None
+
+        print(f"External {external} on {channel_of_interest} internal {int_ext} shop {shop_sipout_ext}")
+
+#        lbr = calls[callerchan].get("localbridge")
+ #       print("call to", dial, "local bridge to %s"%lbr if lbr else '')
+#        if lbr:
+ #         print("bridged:", calls[lbr])
+  #        lbrcalleduid=calls[lbr].get("calleduid")
+#          callee = calls.get(lbrcalleduid)
+#          print("  callee:", callee)
+#          if callee: 
+#            sv = callee.get("statusvar")
+#            if sv:
+#              sv.set("Dial")
+#            sw = callee.get("window")
+#            if sw:
+#              callee_n = unsip(dial)
+#              sw.client.set(callee_n)
+#              sw.rec_uid = callerchan
 
         # bridged call: use ConnectedLineNum
         # else: use callerchan's destination
-        if lbr:
-          shop_phone = event.keys.get("ConnectedLineNum")
-          print("Shop phone=", shop_phone)
-          shop_info = shops.by_phone.get(shop_phone, ["Нет данных", ""])
-        else:
-          shop_ext = calls[callerchan].get("destination", "")
-          print("Shop ext=", shop_ext)
-          shop_info = shops.by_dest.get(shop_ext, ["Нет данных", ""])
+#        if lbr:
+#          shop_phone = event.keys.get("ConnectedLineNum")
+#          print("Shop phone=", shop_phone)
+#          shop_info = shops.by_phone.get(shop_phone, ["Нет данных", ""])
+#        else:
 
-        if dial in myext:
-          if len(calls[callerchan].get("callerid", "")) == 3:
-            print("internal call from", calls[callerchan].get("callerid", ""))
-          else:
-            print("Create status window on channel", callerchan)
-            cw, sv = add_call_window("+"+calls[callerchan].get("callerid", ""), 
+        #shop_ext = calls[callerchan].get("destination", "")
+#        print("Shop ext=", shop_sipout_ext)
+
+        if int_ext in myext:
+#          if len(calls[callerchan].get("callerid", "")) == 3:
+#            print("internal call from", calls[callerchan].get("callerid", ""))
+#          elif event.keys["Channel"].startswith("Local"):
+#            print("local call")
+#          else:
+            print("Create status window on channel", channel_of_interest)
+            shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "x2", "x3"])
+            cw, sv = add_call_window(external, 
 					shop_info,
-					dial, calls[callerchan]["channel"])
-            calls[callerchan]["window"] = cw
+					dial, channel_of_interest)
+            calls[channel_of_interest]["window"] = cw
             cw.shop_info = shop_info
             cw.rec_uid = callerchan
-            calls[callerchan]["statusvar"] = sv
+            calls[channel_of_interest]["statusvar"] = sv
+            cw.ring_time = datetime.utcnow()
+
             calls[callerchan]["calleduid"] = calledchan
             sv.set("Ringing")
 
     elif event.name=="Newstate":
       print("\\", event.keys.get("Uniqueid"), event.keys.get("ChannelState"))
-      if event.keys.get("ChannelState")=='6':
-        #print(event.keys)
+      #print(event.keys)
+      if event.keys.get("ChannelState")=='6': # ANSWER
         uid=event.keys.get("Uniqueid")
         print("call", uid, "is Up", calls[uid])
         sv=calls[uid].get("statusvar")
-        sw=calls[uid].get("window")
         if sv:
           sv.set("Up")
-          try:
-            calleruid = calls[uid]["calleruid"]
-            print("caller:", calleruid)
-            if sw:
-              open_shop_doc(sw.shop_info)
-          except:
-            print("could not open script page")
-          #ch=event.keys.get("Channel")
-          #print("up:", ch, uid, calls[uid])
-          #calls[uid]["channel"] = ch
+        sw=calls[uid].get("window")
+        if sw:
+          sw.answer_time = datetime.utcnow()
+          open_shop_doc(sw.shop_info)
 
     elif event.name=="Hangup":
       uid = event.keys["Uniqueid"]
@@ -351,6 +400,8 @@ def event_listener(event,**kwargs):
       c = calls.pop(uid)
       #print(event.keys)
       cw = c.get("window")
+      if cw:
+        cw.end_time = datetime.utcnow()
       sv = c.get("statusvar")
       if sv:
         sv.set("Ended")
@@ -367,12 +418,6 @@ def event_listener(event,**kwargs):
     elif event.name=="Masquerade":
         print(event.keys)
 
-    elif event.name=="Bridge":
-        print(event.keys)
-
-    elif event.name=="Rename":
-        print(event.keys)
-
     elif event.name=="LocalBridge":
       uid1 = event.keys["Uniqueid1"]
       uid2 = event.keys["Uniqueid2"]
@@ -380,6 +425,16 @@ def event_listener(event,**kwargs):
       calls[uid1]["localbridge"] = uid2
       calls[uid2]["localbridge"] = uid1
       # may be we need lists here?
+
+    elif event.name=="Bridge":
+      uid1 = event.keys["Uniqueid1"]
+      uid2 = event.keys["Uniqueid2"]
+      bstate = event.keys["Bridgestate"]
+      print(f"\\  {bstate} {uid1}<->{uid2}")
+#      calls[uid1]["localbridge"] = uid2
+#      calls[uid2]["localbridge"] = uid1
+      # may be we need lists here?
+
 
   except:
     traceback.print_exc()
