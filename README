@@ -1,8 +1,10 @@
 Install following python modules:
-  pip install asterisk-ami
+  pip install asterisk-ami persist-queue
 
 To fetch data from google docs:
   pip install --upgrade google-api-python-client
+
+
 
 Link data.py to cgi-bin folder.
 

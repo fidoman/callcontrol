@@ -301,8 +301,8 @@ def event_listener(event,**kwargs):
       subevt = event.keys.get("SubEvent")
       print(f"\\ {subevt} {dial}: {chan} [{callerchan}] -> {dest} [{calledchan}]")
       print("++", event.keys)
-      print("caller:", calls[callerchan])
-      print("callee:", calls[calledchan])
+      print("caller:", calls.get(callerchan))
+      print("callee:", calls.get(calledchan))
       if subevt=="Begin":
         calls[callerchan]["calleduid"] = calledchan
         # classify call:
@@ -310,6 +310,27 @@ def event_listener(event,**kwargs):
         #   to external
         #   other
 
+        if chan.startswith("SIP/sipout"):
+          print("call from sipout")
+          shop_sipout_ext = calls[callerchan]["destination"]
+          int_ext = dial
+          channel_of_interest = callerchan
+          external = calls[callerchan]["callerid"]
+        elif dial.startswith("sipout"):
+          print("call to sipout")
+          channel_of_interest = calledchan
+          int_ext = calls[callerchan]["destination"]
+          external = dial.split("/",1)[1]
+          # requre that all sipout channel are named as sipoutNNN
+          shop_sipout_ext = dial.split("/",1)[0][len("sipout"):]
+        else:
+          print("other call")
+          channel_of_interest = None
+          int_ext = None
+          shop_sipout_ext = None
+          external = None
+
+        print(f"External {external} on {channel_of_interest} internal {int_ext} shop {shop_sipout_ext}")
 
 #        lbr = calls[callerchan].get("localbridge")
  #       print("call to", dial, "local bridge to %s"%lbr if lbr else '')
@@ -335,24 +356,26 @@ def event_listener(event,**kwargs):
 #          print("Shop phone=", shop_phone)
 #          shop_info = shops.by_phone.get(shop_phone, ["Нет данных", ""])
 #        else:
-        shop_ext = calls[callerchan].get("destination", "")
-        print("Shop ext=", shop_ext)
-        shop_info = shops.by_dest.get(shop_ext, ["Нет данных x1", "x2", "x3"])
 
-        if dial in myext:
-          if len(calls[callerchan].get("callerid", "")) == 3:
-            print("internal call from", calls[callerchan].get("callerid", ""))
-          elif event.keys["Channel"].startswith("Local"):
-            print("local call")
-          else:
-            print("Create status window on channel", callerchan, "call from", calls[callerchan].get("callerid", ""))
-            cw, sv = add_call_window("+"+calls[callerchan].get("callerid", ""), 
+        #shop_ext = calls[callerchan].get("destination", "")
+#        print("Shop ext=", shop_sipout_ext)
+        shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "x2", "x3"])
+
+        if int_ext in myext:
+#          if len(calls[callerchan].get("callerid", "")) == 3:
+#            print("internal call from", calls[callerchan].get("callerid", ""))
+#          elif event.keys["Channel"].startswith("Local"):
+#            print("local call")
+#          else:
+            print("Create status window on channel", channel_of_interest)
+            cw, sv = add_call_window(external, 
 					shop_info,
-					dial, calls[callerchan]["channel"])
-            calls[callerchan]["window"] = cw
+					dial, channel_of_interest)
+            calls[channel_of_interest]["window"] = cw
             cw.shop_info = shop_info
             cw.rec_uid = callerchan
-            calls[callerchan]["statusvar"] = sv
+            calls[channel_of_interest]["statusvar"] = sv
+
             calls[callerchan]["calleduid"] = calledchan
             sv.set("Ringing")
 
