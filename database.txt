@@ -135,3 +135,26 @@ end;
 $$ language plpgsql;
 
 grant EXECUTE on function check_ext_pw(varchar, varchar) to cc_data;
+
+-- специальный тэг
+insert into tags (tag_name) values ('Без записи');
+
+create table call_log (
+  cl_id bigserial primary key, cl_rand char(32),
+  cl_tag integer references tags (tag_id), 
+  cl_operator integer references operators(op_id), 
+  cl_operator_name varchar;
+  cl_rec_uid varchar,
+  cl_client_phone varchar, 
+  cl_shop_phone varchar,
+  cl_shop_name varchar,
+  cl_ring_time timestamp,
+  cl_answer_time timestamp,
+  cl_end_time timestamp,
+  cl_close_time varchar,
+  cl_note varchar
+);
+
+grant select, insert on call_log to cc_data;
+grant select, update on call_log_cl_id_seq to cc_data;
+grant select on operators to cc_data;
