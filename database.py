@@ -145,6 +145,24 @@ exten => %(prov_ext)s,n,Hangup
         return "exten => %s,%s,Dial(%s,15,o)\n"%(dest, pri, dial)
       return ''
 
+    def get_group(ext):
+      """  """
+      for (e,) in db.prepare("select op2.op_ext from operators op1, operators op2 where op1.op_group=op2.op_group and op1.op_ext=$1")(ext):
+        yield e
+
+    def get_all():
+      for (e,) in db.prepare("select op_ext from operators where op_group is not null")():
+        yield e
+
+    def get_neighbours(ext, which):
+      if which=="все":
+        exts = set(get_all())
+      elif which=="ячейка":
+        exts = set(get_group(ext))
+      else:
+        exts = set()
+      return exts
+
 
     # get extensions
     for shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3 in db.prepare("select shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3 from shops, sip_users where su_phone=shop_phone order by su_myext"):
@@ -155,6 +173,12 @@ exten => %(prov_ext)s,n,Hangup
 exten => %(ext)s,n,Morsecode(account is locked)
 """%{"ext": su_myext}
       else:
-        dial = mk_dial(su_myext, "n", (ops.get(shop_manager), ops.get(shop_manager2)))
+        m1 = ops.get(shop_manager)
+        m2 = ops.get(shop_manager2)
+        dial = mk_dial(su_myext, "n", (m1, m2))
+        q2 = get_neighbours(m1, shop_queue2) | get_neighbours(m2, shop_queue2)
+        dial += mk_dial(su_myext, "n", list(q2))
+        q3 = get_neighbours(m1, shop_queue3) | get_neighbours(m2, shop_queue3)
+        dial += mk_dial(su_myext, "n", list(q3))
 
       print(TPL%{'prov_ext':su_myext, 'destiname':shop_name, 'dial': dial})
