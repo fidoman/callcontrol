@@ -3,6 +3,7 @@ import os
 import json
 from itertools import count
 
+
 from apiclient import discovery
 from oauth2client import client
 from oauth2client import tools
@@ -131,33 +132,50 @@ def getval(l, i):
     return None
 
 if __name__ == '__main__':
-    all_data = fetch_all()
-    print("sources:", all_data.keys())
     dbconn = json.load(open("database.json"))
     db = postgresql.open(**dbconn)
 
+    op_fields = ["group", "ext", "location"]
+    op_columns = ["op_"+x for x in op_fields]
+    op_columns_argn = list(zip(op_columns, count()))
+    op_columns_argn_n = ["$%d"%(x[1]+2) for x in op_columns_argn]
+    op_columns_argn_set = ["%s=$%d"%(x[0], x[1]+2) for x in op_columns_argn]
+
+    op_fields_full = ['name'] + op_fields
+
+    q_ops = db.prepare("select " + ", ".join(op_columns) + " from operators where op_name=$1")
+    q_op_ins = db.prepare("insert into operators (op_name, " + ", ".join(op_columns) + ") values ($1, " + ", ".join(op_columns_argn_n) + ")")
+    q_op_upd = db.prepare("update operators set " + ", ".join(op_columns_argn_set) + " where op_name=$1")
+
+
+    all_data = fetch_all()
+    print("sources:", all_data.keys())
     managers_cols, managers_data = all_data['managers']
-    q_ops = db.prepare("select op_group, op_ext from operators where op_name=$1")
-    q_op_ins = db.prepare("insert into operators (op_name, op_group, op_ext) values ($1, $2, $3)")
-    q_op_upd = db.prepare("update operators set op_group=$2, op_ext=$3 where op_name=$1")
 
     for m in managers_data:
-     # print(m[managers_cols['name']])
-     # print(m[managers_cols['group']])
-     # print(m[managers_cols['ext']])
-      name = m[managers_cols['name']]
-      group = m[managers_cols['group']]
-      ext = m[managers_cols['ext']]
+      if len(m)<=max(managers_cols.values()):
+        print("short line", repr(m))
+        continue
 
-      x=q_ops(name)
+      m_name = m[managers_cols['name']]
+      m_data = [m[managers_cols[x]] for x in op_fields]
+
+      x=q_ops(m_name)
       if len(x)==0:
-        print("new operator", name)
-        q_op_ins(name, group, ext)
+        print("new operator", m_name)
+        q_op_ins(m_name, *m_data)
       else:
-        print("existing operator", name, x[0][0], x[0][1])
-        if x[0][0]!=group or x[0][1]!=ext:
-          print("need update")
-          q_op_upd(name, group,ext)
+        print("existing operator", m_name)
+        m_diff = False
+        for z in zip(x[0], m_data, op_columns):
+          if z[0]!=z[1]:
+            print("diff on", z[2], "->", z[0], "!=", z[1])
+            m_diff = True
+            break
+        if m_diff:
+          q_op_upd(m_name, *m_data)
+
+    exit()
 
     shops_cols, shops_data = all_data['shops']
     for s in shops_data:

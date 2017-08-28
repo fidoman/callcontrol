@@ -22,11 +22,10 @@ op_gh_new varchar
 create table operators (
 op_id serial primary key,
 op_name varchar,
-op_group varchar
-)
-;
-alter table operators add op_ext varchar;
-
+op_ext varchar,
+op_group varchar,
+op_location varchar
+);
 
 create or replace function operators_history() returns trigger as $op_hist$
 begin
