@@ -158,11 +158,11 @@ def update_data_in_table(db, table, column_prefix, master_field, data_fields, da
         print("skip", repr(d))
         continue
 
-      if d_master in masters:
+      if d_master.lower() in masters:
         print("duplicate", d_master)
         continue
 
-      masters.add(d_master)
+      masters.add(d_master.lower())
 
       d_fields = [d[data_field_pos[x]] for x in data_fields]
 

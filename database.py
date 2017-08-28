@@ -123,18 +123,38 @@ exten = %(ext)s,hint,SIP/%(ext)s"""
 
   elif sys.argv[1]=="inbound":
     print(";inbound calls")
+
+    ops = {}
+    for op_name, op_ext in db.prepare("select op_name, op_ext from operators"):
+      ops[op_name] = op_ext
+
     TPL="""
 exten => %(prov_ext)s,1,Set(CALLERID(num)=+${CALLERID(num)})
 exten => %(prov_ext)s,2,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN},m)
 exten => %(prov_ext)s,3,Set(CALLERID(name)=%(destiname)s)
-exten => %(prov_ext)s,n,Dial(SIP/%(pri_manager)s)
+;exten => %(prov_ext)s,n,Dial(SIP/)
+%(dial)s
 ; call primary manager
 ; then call group
 exten => %(prov_ext)s,n,Hangup
     """
 
+    def mk_dial(dest, pri, exts):
+      if exts:
+        dial = "&".join(["SIP/%s"%x for x in exts if x])
+        return "exten => %s,%s,Dial(%s,15,o)\n"%(dest, pri, dial)
+      return ''
 
 
     # get extensions
-    for shop_name, shop_phone, su_myext, shop_pri_manager, op_ext in db.prepare("select shop_name, shop_phone, su_myext, shop_pri_manager, op_ext from shops, sip_users, operators where su_phone=shop_phone and shop_pri_manager=op_name"):
-      print(TPL%{'prov_ext':su_myext, 'destiname':shop_name, 'pri_manager': op_ext})
+    for shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3 in db.prepare("select shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3 from shops, sip_users where su_phone=shop_phone order by su_myext"):
+      print("; ", shop_name, su_myext)
+      if shop_active != "Да":
+        #print(shop_name, "is disabled")
+        dial = """exten => %(ext)s,n,Answer()
+exten => %(ext)s,n,Morsecode(account is locked)
+"""%{"ext": su_myext}
+      else:
+        dial = mk_dial(su_myext, "n", (ops.get(shop_manager), ops.get(shop_manager2)))
+
+      print(TPL%{'prov_ext':su_myext, 'destiname':shop_name, 'dial': dial})
