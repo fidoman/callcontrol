@@ -11,6 +11,7 @@ import configparser
 #import secrets
 import itertools, random
 import urllib.parse
+from datetime import datetime
 
 #cgitb.enable(display=0, logdir="/var/log/ccdata")
 
@@ -92,17 +93,32 @@ try:
       shop_phone = form.getvalue("shop_phone")
       shop_name = form.getvalue("shop_name")
       ring_time = form.getvalue("ring_time")
-      if ring_time == 'None': ring_time = None
+
+      if ring_time == 'None': 
+        ring_time = None
+      else:
+        ring_time = datetime.strptime(ring_time, '%Y-%m-%d %H:%M:%S.%f')
+
       answer_time = form.getvalue("answer_time")
-      if answer_time == 'None': answer_time = None
+      if answer_time == 'None': 
+        answer_time = None
+      else:
+        answer_time = datetime.strptime(answer_time, '%Y-%m-%d %H:%M:%S.%f')
+
       end_time = form.getvalue("end_time")
-      if end_time == 'None': end_time = None
+      if end_time == 'None': 
+        end_time = None
+      else:
+        end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S.%f')
 
       note = form.getvalue("note")
 
       close_time = form.getvalue("close_time")
-      if close_time == 'None': close_time = None
-    
+      if close_time == 'None':
+        close_time = None
+      else:
+        close_time = datetime.strptime(close_time, '%Y-%m-%d %H:%M:%S.%f')
+
       #rand = secrets.token_urlsafe(32)
       rand = ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') 
 		for x in itertools.repeat(None, 32)])
@@ -132,7 +148,7 @@ try:
       else:
         a1=a2=''
 
-      print(("<tr>""<td>"+a1+(close_time or '')+a2+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+"</tr>"))
+      print(("<tr>""<td>"+a1+str(close_time or '')+a2+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+"</tr>"))
 
     print("</table>")
     exit()
@@ -152,9 +168,21 @@ try:
     else:
       out = None
 
+  elif what == "phone_history":
+    """ get records for given phone order by date"""
+    out = {}
+    out["phone"] = form.getvalue("phone")
+    out["list"] = []
+    for r in db.prepare("select * from call_log where cl_client_phone=$1 order by cl_close_time desc")(out["phone"]):
+      r1 = [str(x) for x in r.values()]
+#      r1 = [str(x) if type(x)==datetime.datetime else x for x in r]
+      out["list"].append(r1)
+    out["keymap"] = r.keymap
+
 except Exception as e:
   print("Content-type: text/plain\n")
-  print("error:", str(e)) #, e.code, e.creator)
+  print("error:", e.code, e.creator)
+  print("info:", str(e))
   print(traceback.format_exc())
   exit()
 
