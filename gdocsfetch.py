@@ -131,75 +131,70 @@ def getval(l, i):
   else:
     return None
 
+
+def update_data_in_table(db, table, column_prefix, master_field, data_fields, data_field_pos, data_list):
+    columns = [column_prefix+x for x in data_fields]
+    master_column = column_prefix+master_field
+
+    columns_argn = list(zip(columns, count())) # enumerate
+    columns_argn_n = ["$%d"%(x[1]+2) for x in columns_argn] # positional arguments for insert
+    columns_argn_set = ["%s=$%d"%(x[0], x[1]+2) for x in columns_argn] # assignments for update
+
+    q = db.prepare("select " + ", ".join(columns) + " from " + table + " where " + master_column + "=$1")
+    q_ins = db.prepare("insert into " + table + " (" + master_column + ", " + ", ".join(columns) + ") values ($1, " + ", ".join(columns_argn_n) + ")")
+    q_upd = db.prepare("update " + table + " set " + ", ".join(columns_argn_set) + " where " + master_column + "=$1")
+
+    max_field = max(data_field_pos.values())
+
+    masters = set()
+
+    for d in data_list:
+      # prevent 'out of index' errors
+      while len(d)<=max_field:
+        d.append('')
+
+      d_master = d[data_field_pos[master_field]]
+      if not d_master:
+        print("skip", repr(d))
+        continue
+
+      if d_master in masters:
+        print("duplicate", d_master)
+        continue
+
+      masters.add(d_master)
+
+      d_fields = [d[data_field_pos[x]] for x in data_fields]
+
+      x=q(d_master)
+      if len(x)==0:
+        print("new item", d_master)
+        q_ins(d_master, *d_fields)
+      else:
+        print("existing item", d_master)
+        m_diff = False
+        for z in zip(x[0], d_fields, data_fields):
+          if z[0]!=z[1]:
+            print("diff on", z[2], ":", z[0], "=>", z[1])
+            m_diff = True
+            break
+        if m_diff:
+          print(d_master, d_fields)
+          q_upd(d_master, *d_fields)
+
+
+
 if __name__ == '__main__':
     dbconn = json.load(open("database.json"))
     db = postgresql.open(**dbconn)
 
-    op_fields = ["group", "ext", "location"]
-    op_columns = ["op_"+x for x in op_fields]
-    op_columns_argn = list(zip(op_columns, count()))
-    op_columns_argn_n = ["$%d"%(x[1]+2) for x in op_columns_argn]
-    op_columns_argn_set = ["%s=$%d"%(x[0], x[1]+2) for x in op_columns_argn]
-
-    op_fields_full = ['name'] + op_fields
-
-    q_ops = db.prepare("select " + ", ".join(op_columns) + " from operators where op_name=$1")
-    q_op_ins = db.prepare("insert into operators (op_name, " + ", ".join(op_columns) + ") values ($1, " + ", ".join(op_columns_argn_n) + ")")
-    q_op_upd = db.prepare("update operators set " + ", ".join(op_columns_argn_set) + " where op_name=$1")
-
-
     all_data = fetch_all()
     print("sources:", all_data.keys())
+
     managers_cols, managers_data = all_data['managers']
-
-    for m in managers_data:
-      if len(m)<=max(managers_cols.values()):
-        print("short line", repr(m))
-        continue
-
-      m_name = m[managers_cols['name']]
-      m_data = [m[managers_cols[x]] for x in op_fields]
-
-      x=q_ops(m_name)
-      if len(x)==0:
-        print("new operator", m_name)
-        q_op_ins(m_name, *m_data)
-      else:
-        print("existing operator", m_name)
-        m_diff = False
-        for z in zip(x[0], m_data, op_columns):
-          if z[0]!=z[1]:
-            print("diff on", z[2], "->", z[0], "!=", z[1])
-            m_diff = True
-            break
-        if m_diff:
-          q_op_upd(m_name, *m_data)
-
-    exit()
+    update_data_in_table(db, "operators", "op_", "name", ["group", "ext", "location"], managers_cols, managers_data)
 
     shops_cols, shops_data = all_data['shops']
-    for s in shops_data:
-      # insert/update on shop_name (add record or update record with same shop_data)
-      shop_name=getval(s, shops_cols['shop'])
-      shop_phone=getval(s, shops_cols['phone'])
-      shop_script=getval(s, shops_cols['script'])
-      shop_worktime=getval(s, shops_cols['worktime'])
-      shop_manager=getval(s, shops_cols['manager'])
-      existing = db.prepare("select shop_phone, shop_script, shop_worktime, shop_pri_manager from shops where shop_name=$1")(shop_name)
-      if len(existing)==0:
-        print("add", shop_name)
-        db.prepare("insert into shops (shop_name, shop_phone, shop_script, shop_worktime, shop_pri_manager) values ($1,$2,$3,$4,$5)")\
-		(shop_name, shop_phone, shop_script, shop_worktime, shop_manager)
-      else:
-        if existing[0][0]!=shop_phone:
-          print("update phone")
-          db.prepare("update shops set shop_phone=$2 where shop_name=$1")(shop_name, shop_phone)
-        if existing[0][1]!=shop_script:
-          print("update script")
-          db.prepare("update shops set shop_script=$2 where shop_name=$1")(shop_name, shop_script)
-        if existing[0][2]!=shop_worktime:
-          print("update worktime")
-          db.prepare("update shops set shop_worktime=$2 where shop_name=$1")(shop_name, shop_worktime)
-        if existing[0][3]!=shop_manager:
-          print("update primary manager")
-          db.prepare("update shops set shop_pri_manager=$2 where shop_name=$1")(shop_name, shop_manager)
+    update_data_in_table(db, "shops", "shop_",
+                "name", ['phone', 'script', 'worktime', 'manager', 'manager2', 'active', 'queue2', 'queue3'],
+                shops_cols, shops_data)
