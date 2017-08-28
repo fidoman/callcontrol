@@ -20,6 +20,7 @@ def initiate_call(callerid, ext, phone):
                                 Priority = 1,
                                 WaitTime = 15,
                                 Callerid = callerid)
+  print(action)
   stat = client.send_action(action)
   print(stat.response)
 

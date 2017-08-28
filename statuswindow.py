@@ -135,12 +135,30 @@ def cmd_tr(ext, arg):
   )
   r = client.send_action(action)
   print(r.response)
-
 #ACTION: Redirect
 #Channel: SIP/x7065558529-8f54
 #Context: default
 #Exten: 5558530
 #Priority: 1
+
+def cmd_spy(ext, arg):
+  global astrisk_conf
+  client, channel, context = arg
+  print(client, channel, context, ext)
+
+  action = SimpleAction('Originate',                                          
+                                Channel = "Local/"+asterisk_conf["ext"]+"@from-internal-auto",
+                                Context = 'chanspy-app', #'chanspy-app',
+                                Exten = ext,
+                                Priority = 1,
+                                WaitTime = 15,
+                                Callerid = "spy-%s"%ext)
+       
+  print(action)
+  r = client.send_action(action)
+  print(r.response)
+
+
 
 def status_updater(extstats, event, **kwargs):
   if event.name=="ExtensionStatus": # Exten Context Hint Status
@@ -180,7 +198,7 @@ def status_window_operation(mode, root, args):
     ch = args
     client.add_event_listener(lambda event, w=root, ch=ch, **kwargs: hangup_closer(event, w, ch, **kwargs))
   elif mode=="control":
-    commands = []
+    commands = [("SPY", cmd_spy, (client, args, asterisk_conf["internalcontext"]))]
   else:
     commands = []
 
@@ -225,5 +243,5 @@ if True:
 if __name__ == "__main__":
 
   root=Tk()
-  status_window_operation("", root, None)
+  status_window_operation("control", root, None)
   root.mainloop()
