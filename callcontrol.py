@@ -359,7 +359,6 @@ def event_listener(event,**kwargs):
 
         #shop_ext = calls[callerchan].get("destination", "")
 #        print("Shop ext=", shop_sipout_ext)
-        shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "x2", "x3"])
 
         if int_ext in myext:
 #          if len(calls[callerchan].get("callerid", "")) == 3:
@@ -368,6 +367,7 @@ def event_listener(event,**kwargs):
 #            print("local call")
 #          else:
             print("Create status window on channel", channel_of_interest)
+            shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "x2", "x3"])
             cw, sv = add_call_window(external, 
 					shop_info,
 					dial, channel_of_interest)
@@ -375,30 +375,24 @@ def event_listener(event,**kwargs):
             cw.shop_info = shop_info
             cw.rec_uid = callerchan
             calls[channel_of_interest]["statusvar"] = sv
+            cw.ring_time = datetime.utcnow()
 
             calls[callerchan]["calleduid"] = calledchan
             sv.set("Ringing")
 
     elif event.name=="Newstate":
       print("\\", event.keys.get("Uniqueid"), event.keys.get("ChannelState"))
-      if event.keys.get("ChannelState")=='6':
-        #print(event.keys)
+      #print(event.keys)
+      if event.keys.get("ChannelState")=='6': # ANSWER
         uid=event.keys.get("Uniqueid")
         print("call", uid, "is Up", calls[uid])
         sv=calls[uid].get("statusvar")
-        sw=calls[uid].get("window")
         if sv:
           sv.set("Up")
-          try:
-            calleruid = calls[uid]["calleruid"]
-            print("caller:", calleruid)
-            if sw:
-              open_shop_doc(sw.shop_info)
-          except:
-            print("could not open script page")
-          #ch=event.keys.get("Channel")
-          #print("up:", ch, uid, calls[uid])
-          #calls[uid]["channel"] = ch
+        sw=calls[uid].get("window")
+        if sw:
+          sw.answer_time = datetime.utcnow()
+          open_shop_doc(sw.shop_info)
 
     elif event.name=="Hangup":
       uid = event.keys["Uniqueid"]
