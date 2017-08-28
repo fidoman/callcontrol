@@ -173,11 +173,12 @@ try:
     out = {}
     out["phone"] = form.getvalue("phone")
     out["list"] = []
-    for r in db.prepare("select * from call_log where cl_client_phone=$1 order by cl_close_time desc")(out["phone"]):
+    r = None
+    for r in db.prepare("select call_log.*, tag_name from call_log, tags where cl_client_phone=$1 and cl_tag=tag_id order by cl_close_time desc")(out["phone"]):
       r1 = [str(x) for x in r.values()]
 #      r1 = [str(x) if type(x)==datetime.datetime else x for x in r]
       out["list"].append(r1)
-    out["keymap"] = r.keymap
+    if r: out["keymap"] = r.keymap
 
 except Exception as e:
   print("Content-type: text/plain\n")
