@@ -19,8 +19,8 @@ echo install python
 if exist %~dp0MicroSIP-3.15.7.exe goto microsip_downloaded
 powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"https://www.microsip.org/downloads/?file=MicroSIP-3.15.7.exe\", \"%~dp0MicroSIP-3.15.7.exe\")"
 :microsip_downloaded
-echo install MicroSIP
-%~dp0MicroSIP-3.15.7.exe /S
+rem echo install MicroSIP
+rem %~dp0MicroSIP-3.15.7.exe /S
 
 if exist %~dp0Git-2.14.0.2-32-bit.exe goto git_downloaded
 powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"https://github.com/git-for-windows/git/releases/download/v2.14.0.windows.2/Git-2.14.0.2-32-bit.exe\", \"%~dp0Git-2.14.0.2-32-bit.exe\")"
