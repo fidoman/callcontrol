@@ -175,15 +175,24 @@ try:
     out["list"] = []
     r = None
     for r in db.prepare("select call_log.*, tag_name from call_log, tags where cl_client_phone=$1 and cl_tag=tag_id order by cl_close_time desc")(out["phone"]):
-      r1 = [str(x) for x in r.values()]
-#      r1 = [str(x) if type(x)==datetime.datetime else x for x in r]
+#      r1 = [str(x) for x in r.values()]
+      r1 = [str(x) if type(x)==datetime else x for x in r]
       out["list"].append(r1)
     if r: out["keymap"] = r.keymap
 
+  elif what == "operators":
+    out = {}
+    out["list"] = []
+    r = None
+    for r in db.prepare("select * from operators")():
+      r1 = [str(x) if type(x)==datetime else x for x in r]
+      out["list"].append(r1)
+    if r: out["keymap"] = r.keymap
+
+
 except Exception as e:
   print("Content-type: text/plain\n")
-  print("error:", e.code, e.creator)
-  print("info:", str(e))
+  print("error:", str(e))
   print(traceback.format_exc())
   exit()
 
