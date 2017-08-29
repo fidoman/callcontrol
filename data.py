@@ -140,9 +140,9 @@ try:
     print('<table>')
     import codecs
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-    print('<thead style="background: lightgray;"><tr><td>Время записи</td><td>Магазин</td><td>Оператор</td><td>Клиент</td></tr></thead><tbody>')
+    print('<thead style="background: lightgray;"><tr><td>Время записи</td><td>Магазин</td><td>Оператор</td><td>Клиент</td><td>Тэг</td></tr></thead><tbody>')
 
-    for (shop_name, operator_name, client_phone, close_time, rand) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand from call_log"):
+    for (shop_name, operator_name, client_phone, close_time, rand, tag) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand, tag_name from call_log, tags where tag_id=cl_tag"):
       if rand:
         params = urllib.parse.urlencode({"what": "get_rec", "ext": ext, "pw": pw, "code": rand.strip()})
         a1 = "<a href=\"/cgi-bin/data.py?"+params+"\">"
@@ -150,7 +150,8 @@ try:
       else:
         a1=a2=''
 
-      print(("<tr>""<td>"+a1+str(close_time or '')+a2+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+"</tr>"))
+      print(("<tr>""<td>"+a1+str(close_time or '')+a2+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+\
+	    "<td>"+(tag or '')+"</td></tr>"))
 
     print("</tbody></table>")
     exit()
