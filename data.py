@@ -137,9 +137,11 @@ try:
   elif what == "list_calls":
     """ show call_log table. Use ?what=get_rec&code=rand url's as links to records """
     print("Content-type: text/html; charset=utf-8\n")
-    print("<table>")
+    print('<table>')
     import codecs
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+    print('<thead style="background: lightgray;"><tr><td>Время записи</td><td>Магазин</td><td>Оператор</td><td>Клиент</td></tr></thead><tbody>')
+
     for (shop_name, operator_name, client_phone, close_time, rand) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand from call_log"):
       if rand:
         params = urllib.parse.urlencode({"what": "get_rec", "ext": ext, "pw": pw, "code": rand.strip()})
@@ -150,7 +152,7 @@ try:
 
       print(("<tr>""<td>"+a1+str(close_time or '')+a2+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+"</tr>"))
 
-    print("</table>")
+    print("</tbody></table>")
     exit()
 
   elif what == "get_rec":
