@@ -373,7 +373,17 @@ def event_listener(event,**kwargs):
 					dial, channel_of_interest)
             calls[channel_of_interest]["window"] = cw
             cw.shop_info = shop_info
-            cw.rec_uid = callerchan
+
+            if (calls[callerchan] or {}).get("monitored"):
+              cw.rec_uid = callerchan
+              print("recording is on calling channel")
+            elif (calls[calledchan] or {}).get("monitored"):
+              cw.rec_uid = calledchan
+              print("recording is on called channel")
+            else:
+              print("recording is not enabled")
+              cw.rec_uid = None
+
             calls[channel_of_interest]["statusvar"] = sv
             cw.ring_time = datetime.utcnow()
 
@@ -417,6 +427,25 @@ def event_listener(event,**kwargs):
 
     elif event.name=="Masquerade":
         print(event.keys)
+
+    elif event.name=="MonitorStart":
+#        print(event.keys)
+        uid = event.keys["Uniqueid"]
+        c=calls.get(uid)
+        c["monitored"] = True
+        print(f"Recording start on channel {uid}")
+        sw = c.get("window")
+        if sw:
+          print(f"rec_uid={uid} same as window")
+          sw.rec_uid = uid
+
+    elif event.name=="MonitorStop":
+        uid = event.keys["Uniqueid"]
+        print(f"Recording stop on channel {uid}")
+        c=calls.get(uid)
+        if c:
+          c["monitored"] = False
+
 
     elif event.name=="LocalBridge":
       uid1 = event.keys["Uniqueid1"]
