@@ -413,7 +413,7 @@ def event_listener(event,**kwargs):
             shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "x2", "x3"])
             cw, sv = add_call_window(external, 
 					shop_info,
-					dial, channel_of_interest)
+					int_ext, channel_of_interest)
             calls[channel_of_interest]["window"] = cw
             cw.shop_info = shop_info
             cw.rec_uid = callerchan
