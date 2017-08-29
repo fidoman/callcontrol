@@ -246,8 +246,11 @@ def close_call_window(window):
 #root.geometry('%dx%d-%d-%d'%(window_w, window_h, space_h, space_v))
 
 
-#show_window = lambda: root.deiconify(); root.lift(); root.wm_attributes('-topmost', 1)
-#hide_window = lambda: root.wm_withdraw()
+show_window = lambda: root.deiconify(); root.lift() #; root.wm_attributes('-topmost', 1)
+hide_window = lambda: root.wm_withdraw()
+
+root.bind("<Ctrl-Alt-H>", hide_window)
+
 
 
 def bg_task():
@@ -283,11 +286,6 @@ def bg_task():
       if note_empty:
         print("queue is empty")
         note_empty = False
-
-#    root.iconify()
-#    root.wm_withdraw()
-#    time.sleep(1)
-#    show_window()
 
 # *** connecting asterisk ***
 
