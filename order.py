@@ -42,5 +42,6 @@ def order_window(shop, shop_ph):
 
   c = Button(ow, text="Звонок", command=dial_cmd)
   ow.bind("<Return>", dial_cmd2)
+
   c.pack()
   ph_entry.focus()
