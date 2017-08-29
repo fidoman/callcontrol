@@ -246,11 +246,18 @@ def close_call_window(window):
 #root.geometry('%dx%d-%d-%d'%(window_w, window_h, space_h, space_v))
 
 
-show_window = lambda: root.deiconify(); root.lift() #; root.wm_attributes('-topmost', 1)
-hide_window = lambda: root.wm_withdraw()
+def show_window(x):
+  print("show")
+  root.deiconify(); root.lift() #; root.wm_attributes('-topmost', 1)
 
-root.bind("<Ctrl-Alt-H>", hide_window)
+def hide_window(x):
+  print("hide")
+  root.wm_withdraw()
 
+hide_window(0)
+
+#root.bind("<Control-Shift-H>", hide_window)
+#root.bind("<Control-Shift-V>", show_window)
 
 
 def bg_task():
