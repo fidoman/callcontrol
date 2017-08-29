@@ -36,6 +36,11 @@ def order_window(shop, shop_ph):
   ph_entry = Entry(call_fr)
   ph_entry.pack(side=LEFT)
   call_fr.pack()   
-  c = Button(ow, text="Звонок", command=lambda c=shop_ph, e=asterisk_conf['ext'], p=ph_entry: initiate_call(c, e, p))
+
+  dial_cmd = lambda c=shop_ph, e=asterisk_conf['ext'], p=ph_entry: initiate_call(c, e, p)
+  dial_cmd2 = lambda _, c=shop_ph, e=asterisk_conf['ext'], p=ph_entry: initiate_call(c, e, p)
+
+  c = Button(ow, text="Звонок", command=dial_cmd)
+  ow.bind("<Return>", dial_cmd2)
   c.pack()
   ph_entry.focus()
