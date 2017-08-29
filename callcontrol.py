@@ -254,7 +254,7 @@ def hide_window(x):
   print("hide")
   root.wm_withdraw()
 
-hide_window(0)
+#hide_window(0)
 
 #root.bind("<Control-Shift-H>", hide_window)
 #root.bind("<Control-Shift-V>", show_window)
@@ -299,7 +299,11 @@ def bg_task():
 from asterisk.ami import *
 
 client = AMIClient(address=asterisk_conf["address"], port=asterisk_conf["port"])
+keeper = AutoReconnect(client)
+#keeper.finished = threading.Event()
+#keeper.start()
 client.login(username=asterisk_conf["username"], secret=asterisk_conf["secret"])
+
 
 def unsip(n):
   # remove sip prefix and normalize number
@@ -490,6 +494,8 @@ def event_listener(event,**kwargs):
 
 client.add_event_listener(event_listener)
 
+
+
 # ***************************
 
 class ShopsData:
@@ -529,5 +535,6 @@ root.mainloop()
 bg_run = False
 root.quit()
 
+keeper.finished.set()
 bgthread.join()
 
