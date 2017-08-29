@@ -11,6 +11,7 @@ import configparser
 #import secrets
 import itertools, random
 import urllib.parse
+from datetime import datetime
 
 #cgitb.enable(display=0, logdir="/var/log/ccdata")
 
@@ -92,17 +93,32 @@ try:
       shop_phone = form.getvalue("shop_phone")
       shop_name = form.getvalue("shop_name")
       ring_time = form.getvalue("ring_time")
-      if ring_time == 'None': ring_time = None
+
+      if ring_time == 'None': 
+        ring_time = None
+      else:
+        ring_time = datetime.strptime(ring_time, '%Y-%m-%d %H:%M:%S.%f')
+
       answer_time = form.getvalue("answer_time")
-      if answer_time == 'None': answer_time = None
+      if answer_time == 'None': 
+        answer_time = None
+      else:
+        answer_time = datetime.strptime(answer_time, '%Y-%m-%d %H:%M:%S.%f')
+
       end_time = form.getvalue("end_time")
-      if end_time == 'None': end_time = None
+      if end_time == 'None': 
+        end_time = None
+      else:
+        end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S.%f')
 
       note = form.getvalue("note")
 
       close_time = form.getvalue("close_time")
-      if close_time == 'None': close_time = None
-    
+      if close_time == 'None':
+        close_time = None
+      else:
+        close_time = datetime.strptime(close_time, '%Y-%m-%d %H:%M:%S.%f')
+
       #rand = secrets.token_urlsafe(32)
       rand = ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') 
 		for x in itertools.repeat(None, 32)])
@@ -121,10 +137,12 @@ try:
   elif what == "list_calls":
     """ show call_log table. Use ?what=get_rec&code=rand url's as links to records """
     print("Content-type: text/html; charset=utf-8\n")
-    print("<table>")
+    print('<table>')
     import codecs
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-    for (shop_name, operator_name, client_phone, close_time, rand) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand from call_log"):
+    print('<thead style="background: lightgray;"><tr><td>Время записи</td><td>Магазин</td><td>Оператор</td><td>Клиент</td><td>Тэг</td></tr></thead><tbody>')
+
+    for (shop_name, operator_name, client_phone, close_time, rand, tag) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand, tag_name from call_log, tags where tag_id=cl_tag"):
       if rand:
         params = urllib.parse.urlencode({"what": "get_rec", "ext": ext, "pw": pw, "code": rand.strip()})
         a1 = "<a href=\"/cgi-bin/data.py?"+params+"\">"
@@ -132,9 +150,10 @@ try:
       else:
         a1=a2=''
 
-      print(("<tr>""<td>"+a1+(close_time or '')+a2+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+"</tr>"))
+      print(("<tr>""<td>"+a1+str(close_time or '')+a2+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+\
+	    "<td>"+(tag or '')+"</td></tr>"))
 
-    print("</table>")
+    print("</tbody></table>")
     exit()
 
   elif what == "get_rec":
@@ -152,9 +171,31 @@ try:
     else:
       out = None
 
+  elif what == "phone_history":
+    """ get records for given phone order by date"""
+    out = {}
+    out["phone"] = form.getvalue("phone")
+    out["list"] = []
+    r = None
+    for r in db.prepare("select call_log.*, tag_name from call_log, tags where cl_client_phone=$1 and cl_tag=tag_id order by cl_close_time desc")(out["phone"]):
+#      r1 = [str(x) for x in r.values()]
+      r1 = [str(x) if type(x)==datetime else x for x in r]
+      out["list"].append(r1)
+    if r: out["keymap"] = r.keymap
+
+  elif what == "operators":
+    out = {}
+    out["list"] = []
+    r = None
+    for r in db.prepare("select * from operators")():
+      r1 = [str(x) if type(x)==datetime else x for x in r]
+      out["list"].append(r1)
+    if r: out["keymap"] = r.keymap
+
+
 except Exception as e:
   print("Content-type: text/plain\n")
-  print("error:", str(e)) #, e.code, e.creator)
+  print("error:", str(e))
   print(traceback.format_exc())
   exit()
 

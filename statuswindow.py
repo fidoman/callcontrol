@@ -3,11 +3,52 @@ import json
 from tkinter import *
 from asterisk.ami import *
 import traceback
+import urllib.parse
+import urllib.request
 
 from config import asterisk_conf
 
+def get_operators():
+    global asterisk_conf
+
+    cmd_params = urllib.parse.urlencode({'what': 'operators', 'ext': asterisk_conf["ext"], 'pw': asterisk_conf["pw"]})
+#    data_params = urllib.parse.urlencode({"phone": ph})
+    url = asterisk_conf["data"] + "?" + cmd_params #+ "&" + data_params
+
+    try:
+      resp = urllib.request.urlopen(url)
+      if resp.headers.get_content_type() != 'application/json':
+        print("error:", repr(resp.read(1000)))
+        raise Exception("server did not return JSON data")
+      else:
+        data = json.load(resp)
+        if "keymap" in data:
+          km=data["keymap"]
+#          print(km)
+          for x in data["list"]:
+            yield x[km["op_name"]], x[km["op_ext"]], x[km["op_group"]], x[km["op_location"]]
+
+    except Exception as e:
+      print(e)
+#      yield "error: "+str(e)
+      return
+
+
+
 def text_status(s):
-  statuses = { '0': "FREE", '2': "BUSY", '8': "RING", None: "UNKN", '-1': "OFF" }
+# https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+ManagerEvent_ExtensionStatus
+  statuses = { 
+	'-2': "BAD",
+	'-1': "UNK",
+	'0': "FREE", 
+	'1': "TALK",
+	'2': "BUSY", 
+	'4': "OFF",
+	'8': "RING", 
+	'16': "HOLD",
+	'17': "WORK",
+	None: "---",  
+  }
   return statuses.get(s, s)
 
 
@@ -47,34 +88,39 @@ def create_status_window(sw, extstats, operators, commands):
       elem_fr = Frame(grp_fr, bd=4)  # frame for each extension with number and command buttons
       elem_lab = Label(elem_fr, text=str(op_txt))
       elem_lab.pack(side=LEFT)
+
+      elem_name = Label(elem_fr, text=op_names[op_txt])
+      elem_name.pack(side=LEFT)
+
       elem_stat = Label(elem_fr, textvariable=init_extension(extstats, client, asterisk_conf["internalcontext"], op_txt), width=4)
       elem_stat.pack(side=LEFT)
+
       for c_txt, c_func, c_arg in commands:
         cmd = lambda z=op_txt, t=c_arg: c_func(z, t)
         print(c_func, op_txt, cmd)
         c_but = Button(elem_fr, text=c_txt, command=cmd)
-        c_but.pack(side=LEFT)
+        c_but.pack(side=RIGHT)
 
-      elem_fr.grid(row=op_pos[0], column=op_pos[1])
+      elem_fr.grid(row=op_pos[0], column=op_pos[1], sticky=W+E)
 
     grp_fr.grid(row=grp_pos[0], column=grp_pos[1])
 
   client.logoff()
 
-ops = {
-   200: ( (1, 1),
-        {'101': (1, 1), '102': (1, 2), '103': (2, 1) } ),
-   201: ( (1, 2),
-        {'104': (1, 1), '105': (2, 1), '106': (2, 2) } ),
-   202: ( (2, 2),
-        {'200': (1, 1), '201': (1, 2), '202': (2, 1), '203': (2, 2)} ),
-   203: ( (2, 1),
-        {'190': (1, 1), '191': (1, 2), '192': (2, 1), '193': (2, 2)} ),
-   204: ( (1, 3),
-        {'204': (1, 1), '205': (1, 2), '206': (2, 1), '207': (2, 2)} ),
-   205: ( (2, 3),
-        {'208': (1, 1), '209': (1, 2), '210': (2, 1), '211': (2, 2)} ),
-}
+#ops = {
+#   200: ( (1, 1),
+#        {'101': (1, 1), '102': (1, 2), '103': (2, 1) } ),
+#   201: ( (1, 2),
+#        {'104': (1, 1), '105': (2, 1), '106': (2, 2) } ),
+#   202: ( (2, 2),
+#        {'200': (1, 1), '201': (1, 2), '202': (2, 1), '203': (2, 2)} ),
+#   203: ( (2, 1),
+#        {'190': (1, 1), '191': (1, 2), '192': (2, 1), '193': (2, 2)} ),
+#   204: ( (1, 3),
+#        {'204': (1, 1), '205': (1, 2), '206': (2, 1), '207': (2, 2)} ),
+#   205: ( (2, 3),
+#        {'208': (1, 1), '209': (1, 2), '210': (2, 1), '211': (2, 2)} ),
+#}
 
 
 def cmd_tr(ext, arg):
@@ -89,12 +135,30 @@ def cmd_tr(ext, arg):
   )
   r = client.send_action(action)
   print(r.response)
-
 #ACTION: Redirect
 #Channel: SIP/x7065558529-8f54
 #Context: default
 #Exten: 5558530
 #Priority: 1
+
+def cmd_spy(ext, arg):
+  global astrisk_conf
+  client, channel, context = arg
+  print(client, channel, context, ext)
+
+  action = SimpleAction('Originate',                                          
+                                Channel = "Local/"+asterisk_conf["ext"]+"@from-internal-auto",
+                                Context = 'chanspy-app', #'chanspy-app',
+                                Exten = ext,
+                                Priority = 1,
+                                WaitTime = 15,
+                                Callerid = "spy-%s"%ext)
+       
+  print(action)
+  r = client.send_action(action)
+  print(r.response)
+
+
 
 def status_updater(extstats, event, **kwargs):
   if event.name=="ExtensionStatus": # Exten Context Hint Status
@@ -134,7 +198,7 @@ def status_window_operation(mode, root, args):
     ch = args
     client.add_event_listener(lambda event, w=root, ch=ch, **kwargs: hangup_closer(event, w, ch, **kwargs))
   elif mode=="control":
-    commands = []
+    commands = [("SPY", cmd_spy, (client, args, asterisk_conf["internalcontext"]))]
   else:
     commands = []
 
@@ -164,7 +228,20 @@ def status_window_operation(mode, root, args):
 # 8 Ringing
 # 2 Up
 
+from pprint import pprint
+
+if True:
+  op_names = {}
+  ops = {}
+  for name, ext, group, location in get_operators():
+    print(name, ext, group, location)
+    if not location: continue
+    op_names[ext] = name.split(" ")[0]
+    ops.setdefault(group, ((1, int(group)), {}))[1][ext] = tuple(location.split(" "))
+
+#  pprint(ops); exit()
 if __name__ == "__main__":
+
   root=Tk()
-  status_window_operation("", root, None)
+  status_window_operation("control", root, None)
   root.mainloop()

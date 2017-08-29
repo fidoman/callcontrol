@@ -20,9 +20,16 @@ def initiate_call(callerid, ext, phone):
                                 Priority = 1,
                                 WaitTime = 15,
                                 Callerid = callerid)
+  print(action)
   stat = client.send_action(action)
   print(stat.response)
 
+def fix_rus(event):
+  print(event)
+  if event.char=="\x16" and event.keysym!='v':
+    print("paste")
+    event.widget.event_generate("<<Paste>>")
+    print("ok")
 
 def order_window(shop, shop_ph):
   global asterisk_conf
@@ -35,6 +42,14 @@ def order_window(shop, shop_ph):
   ph_entry = Entry(call_fr)
   ph_entry.pack(side=LEFT)
   call_fr.pack()   
-  c = Button(ow, text="Звонок", command=lambda c=shop_ph, e=asterisk_conf['ext'], p=ph_entry: initiate_call(c, e, p))
+
+  dial_cmd = lambda c=shop_ph, e=asterisk_conf['ext'], p=ph_entry: initiate_call(c, e, p)
+  dial_cmd2 = lambda _, c=shop_ph, e=asterisk_conf['ext'], p=ph_entry: initiate_call(c, e, p)
+
+  c = Button(ow, text="Звонок", command=dial_cmd)
+  ow.bind("<Return>", dial_cmd2)
+  ow.bind("<Key>", fix_rus)
+#  ow.bind("<Control-М>", lambda _: ow.)
+
   c.pack()
   ph_entry.focus()

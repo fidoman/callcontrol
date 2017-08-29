@@ -5,6 +5,8 @@ import os
 import json
 import traceback
 from datetime import datetime
+import urllib.parse
+import urllib.request
 
 from statuswindow import status_window_operation
 
@@ -16,7 +18,7 @@ call_log = Queue(call_log_dir)
 
 root = Tk()
 screen_w, screen_h = root.winfo_screenwidth(), root.winfo_screenheight()
-window_w, window_h = 320, 200
+window_w, window_h = 320, 240
 space_h, space_v = 32, 40
 margin_h, margin_v = 64, 4
 #pos_x, pos_y = screen_w - space_h - window_w, screen_h - space_v - window_h
@@ -50,7 +52,7 @@ ext_label.grid(row=1, column=1)
 ext_entry = Entry(root, textvariable=my_extension)
 ext_entry.grid(row=1, column=2)
 
-add_window_button = Button(root, text="Тест", command = lambda: add_call_window("Тест", "123", "45", "x"))
+add_window_button = Button(root, text="Тест", command = lambda: add_call_window("79015363244", "123", "45", "x"))
 add_window_button.grid(row=2, column=1)
 
 add_window_button = Button(root, text="list", command = list_commands)
@@ -83,6 +85,30 @@ def transfer_window(ch):
   status_window_operation("transfer", t, ch)
 
 
+def get_history(ph):
+    cmd_params = urllib.parse.urlencode({'what': 'phone_history', 'ext': asterisk_conf["ext"], 'pw': asterisk_conf["pw"]})
+    data_params = urllib.parse.urlencode({"phone": ph})
+    url = asterisk_conf["data"] + "?" + cmd_params + "&" + data_params
+
+    try:
+      resp = urllib.request.urlopen(url)
+      if resp.headers.get_content_type() != 'application/json':
+        print("error:", repr(resp.read(1000)))
+        raise Exception("server did not return JSON data")
+      else:
+        data = json.load(resp)
+        if "keymap" in data:
+          km=data["keymap"]
+          print(km)
+          for x in data["list"]:
+            yield " ".join((x[km["cl_shop_name"]], x[km["cl_operator_name"]], x[km["tag_name"]], x[km["cl_ring_time"]]))
+
+    except Exception as e:
+      print(e)
+      yield "error: "+str(e)
+      return
+
+
 
 def add_call_window(callerid, shop_info, operator, channel):
  try:
@@ -111,8 +137,16 @@ def add_call_window(callerid, shop_info, operator, channel):
 
   k = Label(cw, text='Клиент:')
   k.grid(row=1, column=0)
-  k = Entry(cw, textvariable=cw.client)
+  k = Entry(cw, textvariable=cw.client, width=16)
   k.grid(row=1, column=1)
+
+  cw.order = StringVar()
+
+  k = Label(cw, text='Заказ:')
+  k.grid(row=1, column=2)
+  k = Entry(cw, textvariable=cw.order, width=10)
+  k.grid(row=1, column=3)
+
 
   cw.shopname = StringVar(value=shop_info[0])
 
@@ -137,6 +171,17 @@ def add_call_window(callerid, shop_info, operator, channel):
   close_btn = Button(cw, text="Завершено", command = lambda: close_call_window(cw))
   close_btn.grid(row=6,column=0)
   cw.protocol("WM_DELETE_WINDOW", lambda: close_call_window(cw))
+
+  hframe = Frame(cw)
+  hscroll = Scrollbar(hframe, orient = VERTICAL)
+  history = Listbox(hframe, yscrollcommand = hscroll.set, exportselection = 0, height=3)
+  hscroll.config(command=history.yview)
+  hscroll.pack(side=RIGHT, fill=Y)
+  history.pack(side=LEFT, fill=BOTH, expand=1)
+
+  hframe.grid(row=7, column=0, columnspan=4, sticky=W+E)
+  for history_record in get_history(callerid):
+    history.insert(END, history_record)
 
   x, y = calculate_position(len(call_windows))
   cw.geometry('%dx%d+%d+%d'%(window_w, window_h, x, y))
@@ -201,11 +246,19 @@ def close_call_window(window):
 #root.geometry('%dx%d-%d-%d'%(window_w, window_h, space_h, space_v))
 
 
-#show_window = lambda: root.deiconify(); root.lift(); root.wm_attributes('-topmost', 1)
-#hide_window = lambda: root.wm_withdraw()
+def show_window(x):
+  print("show")
+  root.deiconify(); root.lift() #; root.wm_attributes('-topmost', 1)
 
-import urllib.parse
-import urllib.request
+def hide_window(x):
+  print("hide")
+  root.wm_withdraw()
+
+hide_window(0)
+
+#root.bind("<Control-Shift-H>", hide_window)
+#root.bind("<Control-Shift-V>", show_window)
+
 
 def bg_task():
   # connect to asterisk and wait for incoming data
@@ -240,11 +293,6 @@ def bg_task():
       if note_empty:
         print("queue is empty")
         note_empty = False
-
-#    root.iconify()
-#    root.wm_withdraw()
-#    time.sleep(1)
-#    show_window()
 
 # *** connecting asterisk ***
 
@@ -370,7 +418,7 @@ def event_listener(event,**kwargs):
             shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "x2", "x3"])
             cw, sv = add_call_window(external, 
 					shop_info,
-					dial, channel_of_interest)
+					int_ext, channel_of_interest)
             calls[channel_of_interest]["window"] = cw
             cw.shop_info = shop_info
 
