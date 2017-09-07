@@ -49,7 +49,9 @@ try:
     """ send audio file by code """
     disposition = form.getvalue("disposition")
     if disposition!="inline":
-      disposition = "attachment; filename=\""+form.getvalue("code")+".wav\""
+      disposition = "attachment"
+
+    disposition+="; filename=\""+form.getvalue("code")+".wav\""
 
     for (rec_uid,) in db.prepare("select cl_rec_uid from call_log where cl_rand=$1")(form.getvalue("code")):
       import os
@@ -173,7 +175,9 @@ try:
     print('<table>')
     import codecs
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-    print('<thead style="background: lightgray;"><tr><td>Время завершения</td><td>Магазин</td><td>Оператор</td><td>Клиент</td><td>Дозвон</td><td>Тэг</td><td>Запись</td></tr></thead><tbody>')
+    print('<thead style="background: gray;"><tr><th>Время завершения</th><th>Магазин</th><th>Оператор</th><th>Клиент</th><th>Дозвон</th><th>Тэг</th><th>Запись</th></tr></thead><tbody>')
+
+    odd = True
 
     for (shop_name, operator_name, client_phone, close_time, rand, tag, answer_time) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand, tag_name, cl_answer_time from call_log, tags where tag_id=cl_tag order by cl_close_time"):
       if rand:
@@ -183,7 +187,7 @@ try:
         rec_url_inl = my_url()+"?"+params_inl
         a1_att = "<a href=\""+ rec_url_att +"\">"
         a2_att = "</a>"
-        a1_inl = '<audio controls style="height:16pt;"> <source src="'+ rec_url_inl +'" type="audio/wav">'
+        a1_inl = '<audio controls style="height:26pt;"> <source src="'+ rec_url_inl +'" type="audio/wav">'
         a2_inl = "</audio>"
       else:
         a1=a2=''
@@ -193,14 +197,118 @@ try:
       else:
         close_time_str = ''
 
-      print(("<tr>""<td>"+close_time_str+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+\
+      print((("<tr>" if odd else '<tr style="background:lightgray;">') + "<td>"+close_time_str+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+\
 	    "<td>"+("Да" if answer_time else "Нет")+"</td>" +\
 	    "<td>"+(tag or '')+"</td>" +\
 	    "<td>"+a1_att+"Скачать"+a2_att +" " + a1_inl+"Прослушать"+a2_inl+"</td>" +\
 	    "</tr>"))
 
+      odd = not odd
+
     print("</tbody></table>")
     exit()
+
+
+  elif what == "list_calls2":
+    """ show call_log table. Use ?what=get_rec&code=rand url's as links to records """
+#    print("Content-type: text/html; charset=utf-8")
+#    print()
+#    print('<table>')
+#    import codecs
+#    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+
+#    print('<thead style="background: gray;"><tr><th>Время завершения</th><th>Магазин</th><th>Оператор</th><th>Клиент</th><th>Дозвон</th><th>Тэг</th><th>Запись</th></tr></thead><tbody>')
+
+#    odd = True
+
+    out = []
+    for (shop_name, operator_name, client_phone, close_time, rand, tag, answer_time) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand, tag_name, cl_answer_time from call_log, tags where tag_id=cl_tag order by cl_close_time"):
+      if rand:
+        params_att = urllib.parse.urlencode({"what": "get_rec", "disposition": "attachment", "code": rand.strip()})
+        params_inl = urllib.parse.urlencode({"what": "get_rec", "disposition": "inline", "code": rand.strip()})
+        rec_url_att = my_url()+"?"+params_att
+        rec_url_inl = my_url()+"?"+params_inl
+        a1_att = "<a href=\""+ rec_url_att +"\">"
+        a2_att = "</a>"
+        a1_inl = '<audio controls style="height:26pt;"> <source src="'+ rec_url_inl +'" type="audio/wav">'
+        a2_inl = "</audio>"
+      else:
+        rec_url_att = ''
+        rec_url_inl = ''
+        a1=a2=''
+
+      if type(close_time) is datetime:
+        close_time_str = close_time.strftime("%Y-%m-%d %H:%M:%S")
+      else:
+        close_time_str = ''
+
+#      print((("<tr>" if odd else '<tr style="background:lightgray;">') + "<td>"+close_time_str+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+\
+#	    "<td>"+("Да" if answer_time else "Нет")+"</td>" +\
+#	    "<td>"+(tag or '')+"</td>" +\
+#	    "<td>"+a1_att+"Скачать"+a2_att +" " + a1_inl+"Прослушать"+a2_inl+"</td>" +\
+#	    "</tr>"))
+      out.append({"close_time": close_time_str,
+                  "shop_name": (shop_name or ''),
+                  "operator_name": (operator_name  or ''),
+                  "client_phone": (client_phone or ''),
+                  "answered": ("Да" if answer_time else "Нет"),
+                  "tag": (tag or ''),
+                  "rec_url_att": rec_url_att,
+                  "rec_url_inl": rec_url_inl
+      })
+
+    doc = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+     content="width=device-width, initial-scale=1, user-scalable=yes">
+  <title>Calls</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+  <script>
+  angular.module('TableFilterApp', [])
+    .controller('TableFilterController', function($scope) {
+      $scope.calls = """ + json.dumps(out) + """;
+    });
+  </script>
+</head>
+
+<body ng-app="TableFilterApp" ng-controller="TableFilterController">
+
+<table>
+<tr><th>Время завершения</th><th>Магазин</th><th>Оператор</th><th>Клиент</th><th>Дозвон</th><th>Тэг</th><th>Запись</th></tr>
+<tr>
+  <td><input ng-model="f.close_time"></td>
+  <td><input ng-model="f.shop_name"></td>
+  <td><input ng-model="f.operator_name"></td>
+  <td><input ng-model="f.client_phone"></td>
+  <td><input ng-model="f.answered"></td>
+  <td><input ng-model="f.tag"></td>
+  <td></td>
+</tr>
+<tr ng-repeat="c in calls | filter:f">
+  <td>{{c.close_time}}</td>
+  <td>{{c.shop_name}}</td>
+  <td>{{c.operator_name}}</td>
+  <td>{{c.client_phone}}</td>
+  <td>{{c.answered}}</td>
+  <td>{{c.tag}}</td>
+  <td><a href="{{c.rec_url_att}}">Скачать</a>
+      <audio controls style="height:26pt;"> <source src="{{c.rec_url_inl}}" type="audio/wav"></audio></td>
+</tr>
+</table>
+</body>
+</html>
+"""
+
+    print("Content-type: text/html; charset=utf-8")
+    print()
+    import codecs
+    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+    print(doc)
+
+    exit()
+
 
 
   elif what == "phone_history":
