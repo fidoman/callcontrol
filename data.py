@@ -12,6 +12,7 @@ import configparser
 import itertools, random
 import urllib.parse
 from datetime import datetime
+import os
 
 #cgitb.enable(display=0, logdir="/var/log/ccdata")
 
@@ -33,12 +34,43 @@ def check_user(ext, pw):
     raise Exception("operator not found")
 
 
+def my_url():
+  return os.environ["REQUEST_SCHEME"]+"://"+os.environ["HTTP_HOST"]+os.environ["SCRIPT_NAME"]
 
 
 out = None
 
 try:
-  what = form.getvalue("what")
+ what = form.getvalue("what")
+
+ # operations without auth
+
+ if what == "get_rec":
+    """ send audio file by code """
+    disposition = form.getvalue("disposition")
+    if disposition!="inline":
+      disposition = "attachment; filename=\""+form.getvalue("code")+".wav\""
+
+    for (rec_uid,) in db.prepare("select cl_rec_uid from call_log where cl_rand=$1")(form.getvalue("code")):
+      import os
+      out = [rec_uid]
+      for x in os.walk("/var/spool/asterisk/monitor"):
+        for fn in x[2]:
+          if fn.find(rec_uid)!=-1:
+            sys.stdout.buffer.write(b"Content-type: audio/wav\n")
+            sys.stdout.buffer.write(b"Content-Disposition: "+disposition.encode("ascii")+b"\n")
+            sys.stdout.buffer.write(b"\n")
+            sys.stdout.buffer.write(open(os.path.join(x[0], fn), "rb").read())
+            exit()
+      break
+    else:
+      out = None
+
+#  elif...
+
+ else:
+  # require auth
+
   ext = form.getvalue("ext")
   pw = form.getvalue("pw")
   check_user(ext, pw)
@@ -136,40 +168,40 @@ try:
 
   elif what == "list_calls":
     """ show call_log table. Use ?what=get_rec&code=rand url's as links to records """
-    print("Content-type: text/html; charset=utf-8\n")
+    print("Content-type: text/html; charset=utf-8")
+    print()
     print('<table>')
     import codecs
     sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
-    print('<thead style="background: lightgray;"><tr><td>Время записи</td><td>Магазин</td><td>Оператор</td><td>Клиент</td><td>Тэг</td></tr></thead><tbody>')
+    print('<thead style="background: lightgray;"><tr><td>Время завершения</td><td>Магазин</td><td>Оператор</td><td>Клиент</td><td>Дозвон</td><td>Тэг</td><td>Запись</td></tr></thead><tbody>')
 
-    for (shop_name, operator_name, client_phone, close_time, rand, tag) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand, tag_name from call_log, tags where tag_id=cl_tag"):
+    for (shop_name, operator_name, client_phone, close_time, rand, tag, answer_time) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand, tag_name, cl_answer_time from call_log, tags where tag_id=cl_tag order by cl_close_time"):
       if rand:
-        params = urllib.parse.urlencode({"what": "get_rec", "ext": ext, "pw": pw, "code": rand.strip()})
-        a1 = "<a href=\"/cgi-bin/data.py?"+params+"\">"
-        a2 = "</a>"
+        params_att = urllib.parse.urlencode({"what": "get_rec", "disposition": "attachment", "code": rand.strip()})
+        params_inl = urllib.parse.urlencode({"what": "get_rec", "disposition": "inline", "code": rand.strip()})
+        rec_url_att = my_url()+"?"+params_att
+        rec_url_inl = my_url()+"?"+params_inl
+        a1_att = "<a href=\""+ rec_url_att +"\">"
+        a2_att = "</a>"
+        a1_inl = '<audio controls style="height:16pt;"> <source src="'+ rec_url_inl +'" type="audio/wav">'
+        a2_inl = "</audio>"
       else:
         a1=a2=''
 
-      print(("<tr>""<td>"+a1+str(close_time or '')+a2+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+\
-	    "<td>"+(tag or '')+"</td></tr>"))
+      if type(close_time) is datetime:
+        close_time_str = close_time.strftime("%Y-%m-%d %H:%M:%S")
+      else:
+        close_time_str = ''
+
+      print(("<tr>""<td>"+close_time_str+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+\
+	    "<td>"+("Да" if answer_time else "Нет")+"</td>" +\
+	    "<td>"+(tag or '')+"</td>" +\
+	    "<td>"+a1_att+"Скачать"+a2_att +" " + a1_inl+"Прослушать"+a2_inl+"</td>" +\
+	    "</tr>"))
 
     print("</tbody></table>")
     exit()
 
-  elif what == "get_rec":
-    """ send audio file by code """
-    for (rec_uid,) in db.prepare("select cl_rec_uid from call_log where cl_rand=$1")(form.getvalue("code")):
-      import os
-      out = [rec_uid]
-      for x in os.walk("/var/spool/asterisk/monitor"):
-        for fn in x[2]:
-          if fn.find(rec_uid)!=-1:
-            sys.stdout.buffer.write(b"Content-type: audio/wav\n\n")
-            sys.stdout.buffer.write(open(os.path.join(x[0], fn), "rb").read())
-            exit()
-      break
-    else:
-      out = None
 
   elif what == "phone_history":
     """ get records for given phone order by date"""

@@ -43,6 +43,7 @@ if __name__=="__main__":
   if sys.argv[1]=="passwords":
     """ populate and show passwords for operators """
     for ext, name in db.prepare("select op_ext, op_name from operators")():
+      if not ext: continue
       pw = db.prepare("select ext_pw from extensions where ext_n=$1")(ext)
       if len(pw)==0:
         print("generate password for", ext)
@@ -50,7 +51,7 @@ if __name__=="__main__":
         db.prepare("insert into extensions (ext_n, ext_pw) values ($1, $2)")(ext, npw)
       else:
         npw = pw[0][0]
-      print("%40s %05s %16s"%(name, ext, npw))
+      print("%s;%s;%s"%(name, ext, npw))
 
   elif sys.argv[1]=="rmpw":
     if len(sys.argv)<3:
