@@ -31,6 +31,13 @@ def gen_pw(l):
     s+=PWsym[random.randrange(0,len(PWsym))]
   return s
 
+def load_operators():
+    ops = {}
+    for op_name, op_ext in db.prepare("select op_name, op_ext from operators"):
+      ops[op_name] = op_ext
+    return ops
+
+
 if __name__=="__main__":
   import sys
 
@@ -134,9 +141,7 @@ exten = %(ext)s,hint,SIP/%(ext)s"""
 """)
     
 
-    ops = {}
-    for op_name, op_ext in db.prepare("select op_name, op_ext from operators"):
-      ops[op_name] = op_ext
+    ops = load_operators()
 
     TPL="""
 exten => %(prov_ext)s,1,Set(CALLERID(num)=+${CALLERID(num)})
@@ -196,8 +201,6 @@ exten => %(ext)s,n,Morsecode(account is locked)
 """%{"ext": su_myext}
       else:
 
-
-
         phases = []
         m1 = ops.get(shop_manager)
         m2 = ops.get(shop_manager2)
@@ -224,3 +227,39 @@ exten => %(ext)s,n,Morsecode(account is locked)
 #        print(phases); exit()
 
       print(TPL%{'prov_ext':su_myext, 'destiname':shop_name, 'dial': dial})
+
+  elif sys.argv[1]=="queues":
+    # make queues:
+
+    # level_1 - walk shops and make for all used PM's combinations
+    queues = {}
+    ops = load_operators()
+    for shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, worktime in db.prepare("select shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, l_worktime from shops, sip_users, levels where su_phone=shop_phone and l_name=shop_level order by su_myext"):
+      if shop_active=="Да":
+        op1 = ops.get(shop_manager)
+        op2 = ops.get(shop_manager2)
+        if not op1 and not op2: continue
+        members = [x for x in (op1, op2) if x]
+        qname = "_".join((["l1"]+members))
+        queues[qname] = members
+    #print(queues)
+
+    # level_2 - all groups
+    groups = {} # group -> members
+    all_ops = []
+    for op_ext, op_group in db.prepare("select op_ext, op_group from operators where op_group is not null"):
+      #print(op_ext,op_group)
+      groups.setdefault(op_group, []).append(op_ext)
+      all_ops.append(op_ext)
+    #print(groups)
+    for grp_n, grp_memb in groups.items():
+      queues["l2_"+grp_n] = grp_memb
+
+    # level_3 - everybody
+    queues["l3"] = all_ops
+
+    for q, m in queues.items():
+      print("[%s]"%q)
+      print("strategy = ringall")
+      for m1 in m:
+        print("member = SIP/%s"%m1)

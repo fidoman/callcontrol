@@ -3,6 +3,9 @@
 #python3 gdocsfetch.py
 
 python3 database.py inbound > /etc/asterisk/extensions-inbound.conf
+python3 database.py queues > /etc/asterisk/queues-ops.conf
+
+
 python3 database.py internal > /etc/asterisk/extensions-internal.conf
 python3 database.py callout > /etc/asterisk/extensions-callout.conf
 
