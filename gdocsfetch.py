@@ -11,7 +11,6 @@ from oauth2client import client
 from oauth2client import tools
 from oauth2client.file import Storage
 
-import postgresql
 
 try:
     import argparse
@@ -187,20 +186,22 @@ def update_data_in_table(db, table, column_prefix, master_field, data_fields, da
 
 
 if __name__ == '__main__':
-    dbconn = json.load(open("database.json"))
-    db = postgresql.open(**dbconn)
-
     all_data = fetch_all()
     print("sources:", all_data.keys())
 
     level_cols, levels_data = all_data['levels']
+    managers_cols, managers_data = all_data['managers']
+    shops_cols, shops_data = all_data['shops']
+
     print(level_cols, levels_data)
     exit()
 
-    managers_cols, managers_data = all_data['managers']
+    import postgresql
+    dbconn = json.load(open("database.json"))
+    db = postgresql.open(**dbconn)
+
     update_data_in_table(db, "operators", "op_", "name", ["group", "ext", "location"], managers_cols, managers_data)
 
-    shops_cols, shops_data = all_data['shops']
     update_data_in_table(db, "shops", "shop_",
-                "name", ['phone', 'script', 'worktime', 'manager', 'manager2', 'active', 'queue2', 'queue3'],
+                "name", ['phone', 'script', 'level', 'manager', 'manager2', 'active', 'queue2', 'queue3'],
                 shops_cols, shops_data)
