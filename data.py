@@ -223,7 +223,7 @@ try:
 #    odd = True
 
     out = []
-    for (shop_name, operator_name, client_phone, close_time, rand, tag, answer_time) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand, tag_name, cl_answer_time from call_log, tags where tag_id=cl_tag order by cl_close_time"):
+    for (shop_name, operator_name, client_phone, close_time, rand, tag, answer_time, order) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand, tag_name, cl_answer_time, cl_order from call_log, tags where tag_id=cl_tag order by cl_close_time"):
       if rand:
         params_att = urllib.parse.urlencode({"what": "get_rec", "disposition": "attachment", "code": rand.strip()})
         params_inl = urllib.parse.urlencode({"what": "get_rec", "disposition": "inline", "code": rand.strip()})
@@ -249,11 +249,12 @@ try:
 #	    "<td>"+a1_att+"Скачать"+a2_att +" " + a1_inl+"Прослушать"+a2_inl+"</td>" +\
 #	    "</tr>"))
       out.append({"close_time": close_time_str,
-                  "shop_name": (shop_name or ''),
-                  "operator_name": (operator_name  or ''),
-                  "client_phone": (client_phone or ''),
-                  "answered": ("Да" if answer_time else "Нет"),
-                  "tag": (tag or ''),
+                  "shop_name": shop_name or '',
+                  "operator_name": operator_name  or '',
+                  "client_phone": client_phone or '',
+                  "answered": "Да" if answer_time else "Нет",
+                  "tag": tag or '',
+                  "order": order or '',
                   "rec_url_att": rec_url_att,
                   "rec_url_inl": rec_url_inl
       })
@@ -277,12 +278,13 @@ try:
 <body ng-app="TableFilterApp" ng-controller="TableFilterController">
 
 <table>
-<tr><th>Время завершения</th><th>Магазин</th><th>Оператор</th><th>Клиент</th><th>Дозвон</th><th>Тэг</th><th>Запись</th></tr>
+<tr><th>Время завершения</th><th>Магазин</th><th>Оператор</th><th>Клиент</th><th>Заказ</th><th>Дозвон</th><th>Тэг</th><th>Запись</th></tr>
 <tr>
   <td><input ng-model="f.close_time"></td>
   <td><input ng-model="f.shop_name"></td>
   <td><input ng-model="f.operator_name"></td>
   <td><input ng-model="f.client_phone"></td>
+  <td><input ng-model="f.order"></td>
   <td><input ng-model="f.answered"></td>
   <td><input ng-model="f.tag"></td>
   <td></td>
@@ -292,6 +294,7 @@ try:
   <td>{{c.shop_name}}</td>
   <td>{{c.operator_name}}</td>
   <td>{{c.client_phone}}</td>
+  <td>{{c.order}}</td>
   <td>{{c.answered}}</td>
   <td>{{c.tag}}</td>
   <td><a href="{{c.rec_url_att}}">Скачать</a>
