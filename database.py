@@ -37,6 +37,12 @@ def load_operators():
       ops[op_name] = op_ext
     return ops
 
+def l1_queue(op1, op2):
+    members = [x for x in (op1, op2) if x]
+    members.sort()
+    qname = "_".join((["l1"]+members))
+    return members, qname
+
 
 if __name__=="__main__":
   import sys
@@ -157,6 +163,9 @@ exten => %(prov_ext)s,n,Hangup
         return "exten => %s,%s,Dial(%s,%d,o)\n"%(dest, pri, dial, timeout)
       return ''
 
+    def mk_queue(dest, pri, qname, timeout):
+      return "exten => %s,%s,Queue(%s,,,,%d)\n"%(dest, pri, qname, timeout)
+
     def get_group(ext):
       """  """
       for (e,) in db.prepare("select op2.op_ext from operators op1, operators op2 where op1.op_group=op2.op_group and op1.op_ext=$1")(ext):
@@ -183,6 +192,18 @@ exten => %(prov_ext)s,n,Hangup
         exts = set()
       return exts
 
+    def get_groupname(m1, m2, which):
+      if which=="все":
+        return "l3"
+      elif which=="ячейка ПМ":
+        for (g,) in db.prepare("select op_group from operators where op_ext=$1 or op_ext=$2 limit 1")(m1, m2):
+          return "l2_"+g
+        return None
+      elif which.startswith("ячейка "):
+        n=which[7:]
+        return "l2_"+n
+      else:
+        return None
 
     processed_phones = {}
     # get extensions
@@ -206,23 +227,31 @@ exten => %(ext)s,n,Morsecode(account is locked)
         m2 = ops.get(shop_manager2)
         if m1 or m2:
           print("; phase1: personal managers:", m1, m2)
-          phases.append([x for x in (m1, m2) if x])
+          _, qname = l1_queue(m1, m2)
+          phases.append(qname)
         #dial = mk_dial(su_myext, "n", (m1, m2))
 
         if shop_queue2:
           print("; phase2:", shop_queue2)
-          phases.append(list(get_neighbours(m1, shop_queue2) | get_neighbours(m2, shop_queue2)))
+#          phases.append(list(get_neighbours(m1, shop_queue2) | get_neighbours(m2, shop_queue2)))
+          qname = get_groupname(m1, m2, shop_queue2)
+          phases.append(qname)
+
 #        dial += mk_dial(su_myext, "n", list(q2))
+
         if shop_queue3:
           print("; phase3:", shop_queue3)
-          phases.append(list(get_neighbours(m1, shop_queue3) | get_neighbours(m2, shop_queue3)))
+          qname = get_groupname(m1, m2, shop_queue3)
+          phases.append(qname)
+#          phases.append(list(get_neighbours(m1, shop_queue3) | get_neighbours(m2, shop_queue3)))
 #        dial += mk_dial(su_myext, "n", list(q3))
 
         dial = ""
         for ph, n in zip(phases, count()):
           last_iter = n==len(phases)-1
           print(";", n, ph, last_iter)
-          dial += mk_dial(su_myext, "n", ph, 120 if last_iter else 15)
+#          dial += mk_dial(su_myext, "n", ph, 120 if last_iter else 15)
+          dial += mk_queue(su_myext, "n", ph, 120 if last_iter else 15)
 
 #        print(phases); exit()
 
@@ -239,8 +268,7 @@ exten => %(ext)s,n,Morsecode(account is locked)
         op1 = ops.get(shop_manager)
         op2 = ops.get(shop_manager2)
         if not op1 and not op2: continue
-        members = [x for x in (op1, op2) if x]
-        qname = "_".join((["l1"]+members))
+        members, qname = l1_queue(op1, op2)
         queues[qname] = members
     #print(queues)
 
