@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 import httplib2
 import os
 import json
@@ -190,6 +192,10 @@ if __name__ == '__main__':
 
     all_data = fetch_all()
     print("sources:", all_data.keys())
+
+    level_cols, levels_data = all_data['levels']
+    print(level_cols, levels_data)
+    exit()
 
     managers_cols, managers_data = all_data['managers']
     update_data_in_table(db, "operators", "op_", "name", ["group", "ext", "location"], managers_cols, managers_data)
