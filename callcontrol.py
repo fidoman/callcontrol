@@ -246,7 +246,8 @@ def close_call_window(window):
         "answer_time": window.answer_time,
         "end_time": window.end_time,
         "note": window.note.get(1.0, END),
-        "close_time": datetime.utcnow()
+        "close_time": datetime.utcnow(),
+        "order": window.order.get()
   })
 
   #print(id(window))
