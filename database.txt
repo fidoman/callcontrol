@@ -158,3 +158,9 @@ create table call_log (
 grant select, insert on call_log to cc_data;
 grant select, update on call_log_cl_id_seq to cc_data;
 grant select on operators to cc_data;
+
+create table levels (
+  l_id serial primary key,
+  l_name varchar,
+  l_worktime varchar
+);
