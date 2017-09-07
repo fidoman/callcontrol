@@ -2,7 +2,7 @@ set WshShell = createobject("Wscript.Shell")
 
 
 a=WshShell.RegRead("HKCR\MicroSIP\shell\open\command\")
-wscript.echo a
+'wscript.echo a
 a=replace(a, """%1""", "")
 
 while True
