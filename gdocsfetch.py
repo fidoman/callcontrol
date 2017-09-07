@@ -193,15 +193,15 @@ if __name__ == '__main__':
     managers_cols, managers_data = all_data['managers']
     shops_cols, shops_data = all_data['shops']
 
-    print(level_cols, levels_data)
-    exit()
-
     import postgresql
     dbconn = json.load(open("database.json"))
     db = postgresql.open(**dbconn)
+
+    update_data_in_table(db, "levels", "l_", "name", ["worktime"], level_cols, levels_data)
 
     update_data_in_table(db, "operators", "op_", "name", ["group", "ext", "location"], managers_cols, managers_data)
 
     update_data_in_table(db, "shops", "shop_",
                 "name", ['phone', 'script', 'level', 'manager', 'manager2', 'active', 'queue2', 'queue3'],
                 shops_cols, shops_data)
+

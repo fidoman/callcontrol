@@ -80,8 +80,13 @@ create table shops (
 shop_id serial primary key,
 shop_name varchar,
 shop_phone varchar,
-shop_pri_manager varchar,
-shop_worktime varchar
+shop_script varchar,
+shop_manager varchar,
+shop_manager2 varchar,
+shop_active varchar,
+shop_queue2 varchar,
+shop_queue3 varchar,
+shop_level varchar
 );
 grant select,insert,update  on shops to cc_populate;
 
@@ -164,3 +169,6 @@ create table levels (
   l_name varchar,
   l_worktime varchar
 );
+
+grant SELECT, insert, update, delete on levels to cc_populate;
+grant SELECT, update on levels_l_id_seq to cc_populate;
