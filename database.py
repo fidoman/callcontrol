@@ -1,6 +1,7 @@
 import json
 import postgresql
 import random
+from itertools import count
 
 """ 
 Module for database access
@@ -123,7 +124,15 @@ exten = %(ext)s,hint,SIP/%(ext)s"""
       print(TPL%{"ext": n})
 
   elif sys.argv[1]=="inbound":
-    print(";inbound calls")
+    print("""; inbound calls
+; if shop is active
+; use 3 dial commands in order
+; then goto voicemail
+
+; if shop is not active - play sound
+; 
+""")
+    
 
     ops = {}
     for op_name, op_ext in db.prepare("select op_name, op_ext from operators"):
@@ -133,22 +142,24 @@ exten = %(ext)s,hint,SIP/%(ext)s"""
 exten => %(prov_ext)s,1,Set(CALLERID(num)=+${CALLERID(num)})
 exten => %(prov_ext)s,2,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN},m)
 exten => %(prov_ext)s,3,Set(CALLERID(name)=%(destiname)s)
-;exten => %(prov_ext)s,n,Dial(SIP/)
 %(dial)s
-; call primary manager
-; then call group
 exten => %(prov_ext)s,n,Hangup
     """
 
-    def mk_dial(dest, pri, exts):
+    def mk_dial(dest, pri, exts, timeout):
       if exts:
         dial = "&".join(["SIP/%s"%x for x in exts if x])
-        return "exten => %s,%s,Dial(%s,15,o)\n"%(dest, pri, dial)
+        return "exten => %s,%s,Dial(%s,%d,o)\n"%(dest, pri, dial, timeout)
       return ''
 
     def get_group(ext):
       """  """
       for (e,) in db.prepare("select op2.op_ext from operators op1, operators op2 where op1.op_group=op2.op_group and op1.op_ext=$1")(ext):
+        yield e
+
+    def get_group_n(n):
+      """  """
+      for (e,) in db.prepare("select op_ext from operators where op_group=$1")(n):
         yield e
 
     def get_all():
@@ -158,28 +169,58 @@ exten => %(prov_ext)s,n,Hangup
     def get_neighbours(ext, which):
       if which=="все":
         exts = set(get_all())
-      elif which=="ячейка":
+      elif which=="ячейка ПМ":
         exts = set(get_group(ext))
+      elif which.startswith("ячейка "):
+        n=which[7:]
+        exts = set(get_group_n(n))
       else:
         exts = set()
       return exts
 
 
+    processed_phones = {}
     # get extensions
-    for shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3 in db.prepare("select shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3 from shops, sip_users where su_phone=shop_phone order by su_myext"):
-      print("; ", shop_name, su_myext)
+    for shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, worktime in db.prepare("select shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, l_worktime from shops, sip_users, levels where su_phone=shop_phone and l_name=shop_level order by su_myext"):
+      if shop_phone in processed_phones:
+        print("; duplicate phone", shop_phone, shop_name, processed_phones[shop_phone])
+        continue
+      else:
+        processed_phones[shop_phone] = shop_name
+
+      print("; ", repr(shop_name), su_myext, repr(worktime))
       if shop_active != "Да":
         #print(shop_name, "is disabled")
         dial = """exten => %(ext)s,n,Answer()
 exten => %(ext)s,n,Morsecode(account is locked)
 """%{"ext": su_myext}
       else:
+
+
+
+        phases = []
         m1 = ops.get(shop_manager)
         m2 = ops.get(shop_manager2)
-        dial = mk_dial(su_myext, "n", (m1, m2))
-        q2 = get_neighbours(m1, shop_queue2) | get_neighbours(m2, shop_queue2)
-        dial += mk_dial(su_myext, "n", list(q2))
-        q3 = get_neighbours(m1, shop_queue3) | get_neighbours(m2, shop_queue3)
-        dial += mk_dial(su_myext, "n", list(q3))
+        if m1 or m2:
+          print("; phase1: personal managers:", m1, m2)
+          phases.append([x for x in (m1, m2) if x])
+        #dial = mk_dial(su_myext, "n", (m1, m2))
+
+        if shop_queue2:
+          print("; phase2:", shop_queue2)
+          phases.append(list(get_neighbours(m1, shop_queue2) | get_neighbours(m2, shop_queue2)))
+#        dial += mk_dial(su_myext, "n", list(q2))
+        if shop_queue3:
+          print("; phase3:", shop_queue3)
+          phases.append(list(get_neighbours(m1, shop_queue3) | get_neighbours(m2, shop_queue3)))
+#        dial += mk_dial(su_myext, "n", list(q3))
+
+        dial = ""
+        for ph, n in zip(phases, count()):
+          last_iter = n==len(phases)-1
+          print(";", n, ph, last_iter)
+          dial += mk_dial(su_myext, "n", ph, 120 if last_iter else 15)
+
+#        print(phases); exit()
 
       print(TPL%{'prov_ext':su_myext, 'destiname':shop_name, 'dial': dial})
