@@ -15,6 +15,25 @@ from config import asterisk_conf, call_log_dir, load_data
 from persistqueue import Queue
 call_log = Queue(call_log_dir)
 
+########
+def text_status(s):
+# https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+ManagerEvent_ExtensionStatus
+  statuses = { 
+	'-2': "BAD",
+	'-1': "UNK",
+	'0': "FREE", 
+	'1': "TALK",
+	'2': "BUSY", 
+	'4': "OFF",
+	'8': "RING", 
+	'16': "HOLD",
+	'17': "WORK",
+	None: "---",  
+  }
+  return statuses.get(s, s)
+########
+
+extstats = {}
 
 root = Tk()
 screen_w, screen_h = root.winfo_screenwidth(), root.winfo_screenheight()
@@ -43,26 +62,34 @@ def list_commands():
   #client.logoff()
 
 
+def root_quit(ev):
+  global root
+  root.destroy()
 
-root.title("test window")
+root.title("Call Control")
 my_extension = StringVar()
+my_extension.set(asterisk_conf["ext"])
+extstats[my_extension.get()] = StringVar()
 
-ext_label = Label(root, text="Внутренний номер")
+ext_label = Label(root, text="Внутренний номер:")
 ext_label.grid(row=1, column=1)
-ext_entry = Entry(root, textvariable=my_extension)
+ext_entry = Entry(root, textvariable=my_extension, width=8, state="readonly")
 ext_entry.grid(row=1, column=2)
+ext_status = Entry(root, textvariable=extstats[my_extension.get()], width=12, state="readonly")
+ext_status.grid(row=1, column=3)
 
 add_window_button = Button(root, text="Тест", command = lambda: add_call_window("79015363244", "123", "45", "x"))
-add_window_button.grid(row=2, column=1)
+#add_window_button.grid(row=2, column=1)
 
-add_window_button = Button(root, text="list", command = list_commands)
-add_window_button.grid(row=2, column=2)
+add_window_button = Button(root, text="List", command = list_commands)
+#add_window_button.grid(row=2, column=2)
 
 quit_button = Button(root, text="Выход", command=root.destroy)
-quit_button.grid(row=3)
-#root.mainloop(); print(my_extension.get()); exit()
+#quit_button.grid(row=2, column=3)
 
-
+root.wm_attributes('-topmost', 1)
+root.protocol("WM_DELETE_WINDOW", lambda: None)
+root.bind("<Control-Shift-Q>", root_quit)
 
 
 def calculate_position(window_number): # from zero
@@ -301,7 +328,9 @@ from asterisk.ami import *
 client = AMIClient(address=asterisk_conf["address"], port=asterisk_conf["port"])
 keeper = AutoReconnect(client)
 #keeper.finished = threading.Event()
-#keeper.start()
+
+#keeper TODO - reinit extensions after reconnect
+
 client.login(username=asterisk_conf["username"], secret=asterisk_conf["secret"])
 
 
@@ -325,6 +354,7 @@ def event_listener(event,**kwargs):
     global calls, myext, state
     global show_window, hide_window
     global shops
+    global extstats
     if event.name!="Registry" and event.name!="PeerStatus":
       print(event.name)
     if logf:
@@ -516,13 +546,39 @@ def event_listener(event,**kwargs):
 #      calls[uid2]["localbridge"] = uid1
       # may be we need lists here?
 
+    elif event.name=="ExtensionStatus": # Exten Context Hint Status
+      #print(repr(event.keys["Exten"]), event.keys["Status"])
+      if event.keys["Exten"] not in extstats:
+        extstats[event.keys["Exten"]] = StringVar()
+      v = extstats[event.keys["Exten"]]
+      v.set(text_status(event.keys["Status"]))
+      print(event.keys["Exten"], "=>", repr(v))
+
 
   except:
     traceback.print_exc()
 
+def init_extension(client, context, e):
+  global extstats
+
+  action = SimpleAction(
+    'ExtensionState',
+    Exten=e,
+    Context=context
+  )
+  stat = client.send_action(action)
+  print(stat.response.keys)
+
+  if e not in extstats:
+    extstats[e] = StringVar()
+  v = extstats[e]
+  v.set(text_status(stat.response.keys["Status"]))
+  print(e, "->", v.get())
+  return v
+
 
 client.add_event_listener(event_listener)
-
+init_extension(client, asterisk_conf["internalcontext"], my_extension.get())
 
 
 # ***************************
@@ -566,4 +622,3 @@ root.quit()
 
 keeper.finished.set()
 bgthread.join()
-
