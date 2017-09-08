@@ -470,11 +470,18 @@ def event_listener(event,**kwargs):
 #            print("local call")
 #          else:
             print("Create status window on channel", channel_of_interest)
+            if "window" in calls[channel_of_interest]:
+              print("window exists, rewriting phone")
+              cw = calls[channel of interest]["window"]
+              sv = calls[channel_of_interest]["statusvar"]
+              cw....= ...update numbers...
+            else:
             shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "", "x3"])
-            cw, sv = add_call_window(unsip(external), 
+              cw, sv = add_call_window(unsip(external), 
 					shop_info,
 					int_ext, channel_of_interest)
-            calls[channel_of_interest]["window"] = cw
+              calls[channel_of_interest]["window"] = cw
+              calls[channel_of_interest]["statusvar"] = sv
 
             if (calls[callerchan] or {}).get("monitored"):
               cw.rec_uid = callerchan
@@ -486,7 +493,6 @@ def event_listener(event,**kwargs):
               print("recording is not enabled")
               cw.rec_uid = None
 
-            calls[channel_of_interest]["statusvar"] = sv
             cw.ring_time = datetime.utcnow()
 
             calls[callerchan]["calleduid"] = calledchan
