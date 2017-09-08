@@ -7,6 +7,7 @@ import traceback
 from datetime import datetime
 import urllib.parse
 import urllib.request
+import re
 
 from statuswindow import status_window_operation
 
@@ -31,6 +32,9 @@ def text_status(s):
 	None: "---",  
   }
   return statuses.get(s, s)
+
+SIPchan = re.compile("SIP/(\d+)-........$")
+
 ########
 
 extstats = {}
@@ -128,7 +132,7 @@ def get_history(ph):
           km=data["keymap"]
           print(km)
           for x in data["list"]:
-            yield " ".join((x[km["cl_shop_name"]], x[km["cl_operator_name"]], x[km["tag_name"]], x[km["cl_ring_time"]]))
+            yield " ".join((x[km["cl_shop_name"]] or '-', x[km["cl_operator_name"]] or '?', x[km["tag_name"]] or 'no tag', x[km["cl_ring_time"]] or 'unknown'))
 
     except Exception as e:
       print(e)
@@ -145,6 +149,8 @@ def add_call_window(callerid, shop_info, operator, channel):
   cw = Toplevel()
   cw.wm_attributes('-topmost', 1)
   cw.title("%s->%s [%s] %s"%(callerid, shop_info[0], operator, channel))
+
+  cw.shop_info = shop_info
 
   cw.ring_time = None
   cw.answer_time = None
@@ -327,10 +333,19 @@ def bg_task():
 from asterisk.ami import *
 
 client = AMIClient(address=asterisk_conf["address"], port=asterisk_conf["port"])
-keeper = AutoReconnect(client)
+
+def asterisk_reconnect(cl, resp):
+  global client, asterisk_conf, my_extension
+  # reinit exts
+  # may give invalid state ifstill not fully booted
+  print("RECONNECT", cl)
+  time.sleep(5) # allow asterisk to bring up on restart
+  init_extension(client, asterisk_conf["internalcontext"], my_extension.get())
+
+keeper = AutoReconnect(client, on_reconnect=asterisk_reconnect, delay=5)
 #keeper.finished = threading.Event()
 
-#keeper TODO - reinit extensions after reconnect
+#keeper
 
 client.login(username=asterisk_conf["username"], secret=asterisk_conf["secret"])
 
@@ -356,7 +371,7 @@ def event_listener(event,**kwargs):
     global show_window, hide_window
     global shops
     global extstats
-    if event.name!="Registry" and event.name!="PeerStatus":
+    if event.name!="Registry" and event.name!="PeerStatus" and event.name!="QueueMemberStatus":
       print(event.name)
     if logf:
       logf.write("--- " + repr(event.name) + "\n")
@@ -365,10 +380,15 @@ def event_listener(event,**kwargs):
 
     if event.name=="Newchannel":
       print("\\", event.keys) #["Uniqueid"])
-      calls[event.keys["Uniqueid"]] = {}
-      calls[event.keys["Uniqueid"]]["callerid"] = event.keys["CallerIDNum"]
-      calls[event.keys["Uniqueid"]]["destination"] = event.keys["Exten"]
-      calls[event.keys["Uniqueid"]]["channel"] = event.keys["Channel"]
+      uid = event.keys["Uniqueid"]
+      calls[uid] = {
+        "callerid": event.keys["CallerIDNum"],
+        "destination": event.keys["Exten"],
+        "channel": event.keys["Channel"],
+        "state": event.keys["ChannelState"],
+        "statedesc": event.keys["ChannelStateDesc"],
+        "context": event.keys["Context"]
+      }
 
     if event.name=="Rename":
       print("\\", event.keys) #["Uniqueid"])
@@ -450,12 +470,11 @@ def event_listener(event,**kwargs):
 #            print("local call")
 #          else:
             print("Create status window on channel", channel_of_interest)
-            shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "x2", "x3"])
-            cw, sv = add_call_window(external, 
+            shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "", "x3"])
+            cw, sv = add_call_window(unsip(external), 
 					shop_info,
 					int_ext, channel_of_interest)
             calls[channel_of_interest]["window"] = cw
-            cw.shop_info = shop_info
 
             if (calls[callerchan] or {}).get("monitored"):
               cw.rec_uid = callerchan
@@ -474,10 +493,45 @@ def event_listener(event,**kwargs):
             sv.set("Ringing")
 
     elif event.name=="Newstate":
-      print("\\", event.keys.get("Uniqueid"), event.keys.get("ChannelState"))
-      #print(event.keys)
-      if event.keys.get("ChannelState")=='6': # ANSWER
-        uid=event.keys.get("Uniqueid")
+      cstate = event.keys.get("ChannelState")
+      cstatedesc = event.keys.get("ChannelStateDesc")
+      chan = event.keys.get("Channel")
+      cnum = event.keys.get("ConnectedLineNum")
+      cname = event.keys.get("ConnectedLineName")
+      uid=event.keys.get("Uniqueid")
+
+      chaninfo = calls.setdefault(uid, {})
+      print("\\", uid, chan, cstate, chaninfo.get("statedesc"), "->", cstatedesc, "==", cnum, cname)
+      chaninfo["state"] = cstate
+      chaninfo["statedesc"] = cstatedesc
+
+      context = chaninfo.get("context")
+
+      sip_ext = None
+      if context == asterisk_conf["internalcontext"]:
+        sip_ext_m = SIPchan.match(chan)
+        if sip_ext_m:
+          sip_ext = sip_ext_m.group(1)
+          print("Extension:", sip_ext)
+          if "window" in chaninfo:
+            print("call window exists")
+          else:
+            print("create call window on ringing to show history")
+            shop_info = shops.by_name.get(cname, ["Нет данных x1", "x2", "x3"])
+            cw, sv = add_call_window(cnum, shop_info, sip_ext, uid)
+            chaninfo["window"] = cw
+            chaninfo["statusvar"] = sv
+            cw.ring_time = datetime.utcnow()
+
+        else:
+          print("cannot parse channel name")
+      else:
+        print("not internal")
+
+      if cstate=='5': # RING
+        pass
+
+      if cstate=='6': # ANSWER
         print("call", uid, "is Up", calls[uid])
         sv=calls[uid].get("statusvar")
         if sv:
@@ -548,12 +602,24 @@ def event_listener(event,**kwargs):
       # may be we need lists here?
 
     elif event.name=="ExtensionStatus": # Exten Context Hint Status
-      #print(repr(event.keys["Exten"]), event.keys["Status"])
+      print(event.keys)
       if event.keys["Exten"] not in extstats:
         extstats[event.keys["Exten"]] = StringVar()
       v = extstats[event.keys["Exten"]]
       v.set(text_status(event.keys["Status"]))
-      print(event.keys["Exten"], "=>", repr(v))
+      print(event.keys["Exten"], "->", v.get())
+
+    elif event.name=="Join":
+      print(event.keys)
+
+    elif event.name=="Leave":
+      print(event.keys)
+
+#    elif event.name=="QueueMemberStatus":
+#      print(event.keys)
+
+    elif event.name=="QueueCallerAbandon":
+      print(event.keys)
 
 
   except:
@@ -568,13 +634,13 @@ def init_extension(client, context, e):
     Context=context
   )
   stat = client.send_action(action)
-  print(stat.response.keys)
+  #print(stat.response.keys)
 
   if e not in extstats:
     extstats[e] = StringVar()
   v = extstats[e]
   v.set(text_status(stat.response.keys["Status"]))
-  print(e, "->", v.get())
+  print(e, "=>", v.get())
   return v
 
 
@@ -589,11 +655,12 @@ class ShopsData:
     global asterisk_conf
     self.by_phone = {}
     self.by_dest = {}
+    self.by_name = {}
 
   def load(self):
     for s in load_data("shops"):
       #print(s) 
-      self.by_phone[s[1]] = self.by_dest[s[3]] = (s[0], s[2], s[1])
+      self.by_phone[s[1]] = self.by_dest[s[3]] = self.by_name[s[0]] = (s[0], s[2], s[1])
       # name, script, phone
 
 
