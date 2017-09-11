@@ -170,11 +170,12 @@ def add_call_window(shop_info, operator, channel):
   cw.end_time = None
   cw.shopphone = shop_info[2]
 
-  cw.rec_uid = None
+  cw.sticky = False # cannot close without tag
+  cw.rec_uid = None # voice record
 
   sv_label = Label(cw, text="Состояние")
-  statusvar = StringVar()
-  sv_data = Label(cw, textvariable = statusvar)
+  cw.statusvar = StringVar()
+  sv_data = Label(cw, textvariable = cw.statusvar)
   sv_label.grid(row=0,column=0)
   sv_data.grid(row=0,column=1)
   transf_b = Button(cw, text='Переключить', command=lambda ch=channel: transfer_window(ch))
@@ -232,7 +233,7 @@ def add_call_window(shop_info, operator, channel):
   cw.geometry('%dx%d+%d+%d'%(window_w, window_h, x, y))
   call_windows.append(cw)
 
-  return cw, statusvar
+  return cw
  except:
   traceback.print_exc()
   return None, None
@@ -248,12 +249,29 @@ def open_shop_doc(shop_info):
 #    os.system('start https://google.com')
 
 
-def close_call_window(window):
+def close_call_window(window, close_unanswered = False):
   global call_windows, call_log
-  if not window.tag.get():
-    return False
-  print("CLOSE", window.tag.get(), window.rec_uid)
-  call_log.put({
+
+  if close_unanswered:
+
+    print("withdrawing window for unanswered call...")
+
+    if window.tag.get():
+      print("no, tag is set")
+      return
+
+    if window.sticky:
+      print("no, window is now sticky")
+      return
+  
+  else:
+
+    if window.statusvar.get()!="Ended":
+      print("cannot close, call in progress")
+      return
+
+    print("CLOSE CALL", window.tag.get(), window.rec_uid)
+    call_log.put({
 	"tag": window.tag.get(), 
 	"operator": window.operator,
 	"rec_uid": window.rec_uid, 
@@ -266,7 +284,7 @@ def close_call_window(window):
         "note": window.note.get(1.0, END),
         "close_time": datetime.utcnow(),
         "order": window.order.get()
-  })
+    })
 
   #print(id(window))
   pos = 0
@@ -425,6 +443,7 @@ def event_listener(event,**kwargs):
         #   to external
         #   other
 
+        make_sticky = False
         if chan.startswith("SIP/sipout"):
           print("call from sipout")
           shop_sipout_ext = calls[callerchan]["destination"]
@@ -438,6 +457,7 @@ def event_listener(event,**kwargs):
           external = dial.split("/",1)[1]
           # requre that all sipout channel are named as sipoutNNN
           shop_sipout_ext = dial.split("/",1)[0][len("sipout"):]
+          make_sticky = True
         else:
           print("other call")
           channel_of_interest = None
@@ -486,14 +506,14 @@ def event_listener(event,**kwargs):
               print("window exists, rewriting phone:", external)
               set_call_window_callerid(cw, unsip(external))
               cw = calls[channel_of_interest]["window"]
-              sv = calls[channel_of_interest]["statusvar"]
             else:
               shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "", "x3"])
-              cw, sv = add_call_window(	shop_info, int_ext, channel_of_interest)
+              cw = add_call_window(shop_info, int_ext, channel_of_interest)
               set_call_window_callerid(cw, unsip(external))
               calls[channel_of_interest]["window"] = cw
-              calls[channel_of_interest]["statusvar"] = sv
 
+            if make_sticky:
+              cw.sticky = True
 
             if (calls[callerchan] or {}).get("monitored"):
               cw.rec_uid = callerchan
@@ -508,7 +528,6 @@ def event_listener(event,**kwargs):
             cw.ring_time = datetime.utcnow()
 
             calls[callerchan]["calleduid"] = calledchan
-            sv.set("Ringing")
 
     elif event.name=="Newstate":
       cstate = event.keys.get("ChannelState")
@@ -519,7 +538,7 @@ def event_listener(event,**kwargs):
       uid=event.keys.get("Uniqueid")
 
       chaninfo = calls.setdefault(uid, {})
-      print("\\", uid, chan, cstate, chaninfo.get("statedesc"), "->", cstatedesc, "==", cnum, cname)
+      print(f"\\ {uid} {chan} {chaninfo.get('state')} ({chaninfo.get('statedesc')}) -> {cstate} ({cstatedesc}) == {cnum} {cname}")
       chaninfo["state"] = cstate
       chaninfo["statedesc"] = cstatedesc
 
@@ -538,10 +557,9 @@ def event_listener(event,**kwargs):
             else:
               print(f"create call window on {uid} shop={cname}")
               shop_info = shops.by_name.get(cname, ["Нет данных x1", "скрипт", "x3"])
-              cw, sv = add_call_window(shop_info, sip_ext, uid)
+              cw = add_call_window(shop_info, sip_ext, uid)
               set_call_window_callerid(cw, cnum)
               chaninfo["window"] = cw
-              chaninfo["statusvar"] = sv
               cw.ring_time = datetime.utcnow()
           else:
             print("no caller name, cannot determine shop, skip window creation")
@@ -550,18 +568,23 @@ def event_listener(event,**kwargs):
       else:
         print("not internal")
 
+      cw=calls[uid].get("window")
+      if cw:
+        cw.statusvar.set(cstatedesc)
+
+
       if cstate=='5': # RING
         pass
 
       if cstate=='6': # ANSWER
         print("call", uid, "is Up", calls[uid])
-        sv=calls[uid].get("statusvar")
-        if sv:
-          sv.set("Up")
         sw=calls[uid].get("window")
         if sw:
           sw.answer_time = datetime.utcnow()
+          sw.sticky = True
           open_shop_doc(sw.shop_info)
+
+
 
     elif event.name=="Hangup":
       uid = event.keys["Uniqueid"]
@@ -571,14 +594,14 @@ def event_listener(event,**kwargs):
       cw = c.get("window")
       if cw:
         cw.end_time = datetime.utcnow()
-      sv = c.get("statusvar")
-      if sv:
-        sv.set("Ended")
+        cw.statusvar.set("Ended")
+        close_call_window(cw, True)
       lbr = c.get("localbridge")
       if lbr:
         print("unbridge", lbr)
         calls[lbr].pop("localbridge")
         # or may be delete from list?
+
 
     elif event.name=="Shutdown":
       print("shutdown")
