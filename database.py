@@ -1,6 +1,7 @@
 import json
 import postgresql
 import random
+import re
 from itertools import count
 
 """ 
@@ -43,6 +44,16 @@ def l1_queue(op1, op2):
     qname = "_".join((["l1"]+members))
     return members, qname
 
+
+days={
+'пн': 'mon',
+'вт': 'tue',
+'ср': 'wed',
+'чт': 'thu',
+'пт': 'fri',
+'сб': 'sat',
+'вс': 'sun'
+}
 
 if __name__=="__main__":
   import sys
@@ -163,8 +174,9 @@ exten => %(prov_ext)s,n,Hangup
         return "exten => %s,%s,Dial(%s,%d,o)\n"%(dest, pri, dial, timeout)
       return ''
 
-    def mk_queue(dest, pri, qname, timeout):
-      return "exten => %s,%s,Queue(%s,,,,%d)\n"%(dest, pri, qname, timeout)
+    def mk_queue(dest, pri, qname, timeout, is_first):
+      return "exten => %s,%s,Queue(%s,,,,%d)\n"%(dest, pri+"(start_ring)" if is_first else pri, qname, timeout) + \
+             "exten => %s,n,Wait(1)\n"%dest
 
     def get_group(ext):
       """  """
@@ -222,6 +234,44 @@ exten => %(ext)s,n,Morsecode(account is locked)
 """%{"ext": su_myext}
       else:
 
+        dial = ''
+        ###
+        #worktime = 'пн-ср 01:00-22:00'
+
+        print(worktime)
+        if worktime is None:
+          dial+="; no limits on worktime\n"
+          dial+="exten => %s,n,Goto(start_ring)\n"%su_myext
+
+        else:
+          m_timerange = re.match("(\d\d:\d\d-\d\d:\d\d)", worktime)
+          if m_timerange:
+            print("just time", worktime)
+            dial+="exten => %s,n,GotoIfTime(%s,,,?start_ring)\n"%(su_myext, worktime)
+
+          else:
+            print("worktime by days of week")
+            re_worktime=re.compile("(пн|вт|ср|чт|пт|сб|вс)(-(пн|вт|ср|чт|пт|сб|вс))?(\s+(\d\d:\d\d-\d\d:\d\d))?\s*(.*)$", re.I + re.MULTILINE)
+            worktime=worktime.replace("\n", " ")
+            while True:
+              m = re_worktime.match(worktime)
+              if not m:
+                break
+              day1 = m.group(1)
+              print(day1)
+              #print(m.group(2))
+              day2 = m.group(3)
+              #print(m.group(4))
+              timerange = m.group(5)
+
+              dial+="exten => %s,n,GotoIfTime(%s,%s,,?start_ring)\n"%(su_myext, timerange, days[day1]+("-" + days[day2] if day2 else ''))
+
+              tail = m.group(6)
+              worktime=tail
+
+        dial += "exten => %s,n,Voicemail(100)\n"%su_myext
+        dial += "exten => %s,n,Hangup\n"%su_myext
+
         phases = []
         m1 = ops.get(shop_manager)
         m2 = ops.get(shop_manager2)
@@ -246,12 +296,11 @@ exten => %(ext)s,n,Morsecode(account is locked)
 #          phases.append(list(get_neighbours(m1, shop_queue3) | get_neighbours(m2, shop_queue3)))
 #        dial += mk_dial(su_myext, "n", list(q3))
 
-        dial = ""
         for ph, n in zip(phases, count()):
           last_iter = n==len(phases)-1
           print(";", n, ph, last_iter)
 #          dial += mk_dial(su_myext, "n", ph, 120 if last_iter else 15)
-          dial += mk_queue(su_myext, "n", ph, 120 if last_iter else 15)
+          dial += mk_queue(su_myext, "n", ph, 120 if last_iter else 15, n==0)
 
 #        print(phases); exit()
 
