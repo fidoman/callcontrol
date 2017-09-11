@@ -119,10 +119,11 @@ try:
 
     rec_uid = form.getvalue("rec_uid")
 
-    for _ in db.prepare("select cl_rec_uid from call_log where cl_rec_uid=$1")(rec_uid):
-      out = "Exists"
-      break
-    else:
+#    for _ in db.prepare("select cl_rec_uid from call_log where cl_rec_uid=$1")(rec_uid):
+#      out = "Exists"
+#      break
+#    else:
+    if True:
       client_phone = form.getvalue("client_phone")
       shop_phone = form.getvalue("shop_phone")
       shop_name = form.getvalue("shop_name")
