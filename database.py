@@ -165,6 +165,7 @@ exten => %(prov_ext)s,1,Set(CALLERID(num)=+${CALLERID(num)})
 exten => %(prov_ext)s,2,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN},m)
 exten => %(prov_ext)s,3,Set(CALLERID(name)=%(destiname)s)
 %(dial)s
+exten => %(prov_ext)s,n,Voicemail(%(prov_ext)s@missed)
 exten => %(prov_ext)s,n,Hangup
     """
 
@@ -269,7 +270,7 @@ exten => %(ext)s,n,Morsecode(account is locked)
               tail = m.group(6)
               worktime=tail
 
-        dial += "exten => %s,n,Voicemail(100)\n"%su_myext
+        dial += "exten => %s,n,Voicemail(%s@offtime)\n"%(su_myext, su_myext)
         dial += "exten => %s,n,Hangup\n"%su_myext
 
         phases = []
