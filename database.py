@@ -239,19 +239,18 @@ exten => %(ext)s,n,Morsecode(account is locked)
         ###
         #worktime = 'пн-ср 01:00-22:00'
 
-        print(worktime)
         if worktime is None:
           dial+="; no limits on worktime\n"
           dial+="exten => %s,n,Goto(start_ring)\n"%su_myext
 
         else:
-          m_timerange = re.match("(\d\d:\d\d-\d\d:\d\d)", worktime)
+          m_timerange = re.match("(\d\d:\d\d-\d\d:\d\d)$", worktime)
           if m_timerange:
-            print("just time", worktime)
+            print("; just time")
             dial+="exten => %s,n,GotoIfTime(%s,,,?start_ring)\n"%(su_myext, worktime)
 
           else:
-            print("worktime by days of week")
+            print("; worktime by days of week")
             re_worktime=re.compile("(пн|вт|ср|чт|пт|сб|вс)(-(пн|вт|ср|чт|пт|сб|вс))?(\s+(\d\d:\d\d-\d\d:\d\d))?\s*(.*)$", re.I + re.MULTILINE)
             worktime=worktime.replace("\n", " ")
             while True:
@@ -259,10 +258,7 @@ exten => %(ext)s,n,Morsecode(account is locked)
               if not m:
                 break
               day1 = m.group(1)
-              print(day1)
-              #print(m.group(2))
               day2 = m.group(3)
-              #print(m.group(4))
               timerange = m.group(5)
 
               dial+="exten => %s,n,GotoIfTime(%s,%s,,?start_ring)\n"%(su_myext, timerange, days[day1]+("-" + days[day2] if day2 else ''))
@@ -270,7 +266,7 @@ exten => %(ext)s,n,Morsecode(account is locked)
               tail = m.group(6)
               worktime=tail
 
-        dial += "exten => %s,n,Voicemail(%s@offtime)\n"%(su_myext, su_myext)
+        dial += "exten => %s,n,Voicemail(%s@offtime,u)\n"%(su_myext, su_myext)
         dial += "exten => %s,n,Hangup\n"%su_myext
 
         phases = []
@@ -341,3 +337,19 @@ exten => %(ext)s,n,Morsecode(account is locked)
       print("strategy = ringall")
       for m1 in m:
         print("member = SIP/%s"%m1)
+
+  elif sys.argv[1]=="voicemail":
+    # configure vicemail for shops
+    print("; voicemail")
+
+    print()
+    print("; offtime calls")
+    print("[offtime]")
+    for shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, worktime in db.prepare("select shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, l_worktime from shops, sip_users, levels where su_phone=shop_phone and l_name=shop_level order by su_myext"):
+      print(su_myext, "=>", "xxxxpwpwpw,"+shop_name+","+"sergey@fidoman.ru"+",,attach=yes|delete=1|emailsubject=Offtime call from ${VM_CALLERID}")
+
+    print()
+    print("; missed calls")
+    print("[missed]")
+    for shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, worktime in db.prepare("select shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, l_worktime from shops, sip_users, levels where su_phone=shop_phone and l_name=shop_level order by su_myext"):
+      print(su_myext, "=>", "xxxxpwpwpw,"+shop_name+","+"sergey@fidoman.ru"+",,attach=yes|delete=1|emailsubject=Missed call from ${VM_CALLERID}")
