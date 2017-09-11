@@ -4,7 +4,7 @@ import threading
 import os
 import json
 import traceback
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 import urllib.parse
 import urllib.request
 import re
@@ -132,12 +132,16 @@ def get_history(ph):
           km=data["keymap"]
           print(km)
           for x in data["list"]:
-            yield " ".join((x[km["cl_shop_name"]] or '-', x[km["cl_operator_name"]] or '?', x[km["tag_name"]] or 'no tag', x[km["cl_ring_time"]] or 'unknown'))
+            tm = x[km["cl_ring_time"]]
+            if tm: 
+              tm = datetime.strptime(tm, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=timezone.utc).astimezone(tz=None).strftime("%Y-%m-%d %H:%M:%S")
+            yield " ".join((x[km["cl_shop_name"]] or '-', x[km["cl_operator_name"]] or '?', x[km["tag_name"]] or 'no tag', tm or 'unknown'))
 
     except Exception as e:
       print(e)
       yield "error: "+str(e)
       return
+
 
 def set_call_window_callerid(cw, callerid):
   cw.callerid = callerid
