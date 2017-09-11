@@ -82,7 +82,7 @@ ext_entry.grid(row=1, column=2)
 ext_status = Entry(root, textvariable=extstats[my_extension.get()], width=12, state="readonly")
 ext_status.grid(row=1, column=3)
 
-add_window_button = Button(root, text="Тест", command = lambda: add_call_window("79015363244", "123", "45", "x"))
+add_window_button = Button(root, text="Тест", command = lambda: add_call_window("123", "45", "x"))
 #add_window_button.grid(row=2, column=1)
 
 add_window_button = Button(root, text="List", command = list_commands)
@@ -139,24 +139,34 @@ def get_history(ph):
       yield "error: "+str(e)
       return
 
+def set_call_window_callerid(cw, callerid):
+  cw.callerid = callerid
+  cw.title("%s->%s [%s] %s"%(cw.callerid, cw.shop_info[0], cw.operator, cw.channel))
+  cw.client.set(callerid)
+  cw.history.delete(0, END)
+  for history_record in get_history(callerid):
+    cw.history.insert(END, history_record)
 
 
-def add_call_window(callerid, shop_info, operator, channel):
+def add_call_window(shop_info, operator, channel):
  try:
   global call_windows
   global shops
   global call_tags
   cw = Toplevel()
   cw.wm_attributes('-topmost', 1)
-  cw.title("%s->%s [%s] %s"%(callerid, shop_info[0], operator, channel))
 
   cw.shop_info = shop_info
+  cw.channel = channel
+  cw.operator = operator # save for logging
+  cw.callerid = None
 
   cw.ring_time = None
   cw.answer_time = None
   cw.end_time = None
-  cw.operator = operator # save for logging
   cw.shopphone = shop_info[2]
+
+  cw.rec_uid = None
 
   sv_label = Label(cw, text="Состояние")
   statusvar = StringVar()
@@ -166,7 +176,7 @@ def add_call_window(callerid, shop_info, operator, channel):
   transf_b = Button(cw, text='Переключить', command=lambda ch=channel: transfer_window(ch))
   transf_b.grid(row=0,column=3)
 
-  cw.client = StringVar(value=callerid)
+  cw.client = StringVar(value='')
 
   k = Label(cw, text='Клиент:')
   k.grid(row=1, column=0)
@@ -207,14 +217,12 @@ def add_call_window(callerid, shop_info, operator, channel):
 
   hframe = Frame(cw)
   hscroll = Scrollbar(hframe, orient = VERTICAL)
-  history = Listbox(hframe, yscrollcommand = hscroll.set, exportselection = 0, height=3)
+  cw.history = history = Listbox(hframe, yscrollcommand = hscroll.set, exportselection = 0, height=3)
   hscroll.config(command=history.yview)
   hscroll.pack(side=RIGHT, fill=Y)
   history.pack(side=LEFT, fill=BOTH, expand=1)
 
   hframe.grid(row=7, column=0, columnspan=4, sticky=W+E)
-  for history_record in get_history(callerid):
-    history.insert(END, history_record)
 
   x, y = calculate_position(len(call_windows))
   cw.geometry('%dx%d+%d+%d'%(window_w, window_h, x, y))
@@ -351,8 +359,8 @@ client.login(username=asterisk_conf["username"], secret=asterisk_conf["secret"])
 
 
 def unsip(n):
-  # remove sip prefix and normalize number
-  _,n = n.split("/",1)
+  """ remove sip prefix and normalize number """
+  n = n.split("/",1)[-1]
 #  print("unsip", repr(n))
   if len(n)==11 and n[0]=="7":
     n="+"+n
@@ -471,17 +479,17 @@ def event_listener(event,**kwargs):
 #          else:
             print("Create status window on channel", channel_of_interest)
             if "window" in calls[channel_of_interest]:
-              print("window exists, rewriting phone")
-              cw = calls[channel of interest]["window"]
+              print("window exists, rewriting phone:", external)
+              set_call_window_callerid(cw, unsip(external))
+              cw = calls[channel_of_interest]["window"]
               sv = calls[channel_of_interest]["statusvar"]
-              cw....= ...update numbers...
             else:
-            shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "", "x3"])
-              cw, sv = add_call_window(unsip(external), 
-					shop_info,
-					int_ext, channel_of_interest)
+              shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "", "x3"])
+              cw, sv = add_call_window(	shop_info, int_ext, channel_of_interest)
+              set_call_window_callerid(cw, unsip(external))
               calls[channel_of_interest]["window"] = cw
               calls[channel_of_interest]["statusvar"] = sv
+
 
             if (calls[callerchan] or {}).get("monitored"):
               cw.rec_uid = callerchan
@@ -518,17 +526,21 @@ def event_listener(event,**kwargs):
         sip_ext_m = SIPchan.match(chan)
         if sip_ext_m:
           sip_ext = sip_ext_m.group(1)
-          print("Extension:", sip_ext)
-          if "window" in chaninfo:
-            print("call window exists")
+          print(f"Extension={sip_ext} caller_name={cname}")
+          if cname:
+            print("need call window")
+            if "window" in chaninfo:
+              print("call window exists")
+            else:
+              print(f"create call window on {uid} shop={cname}")
+              shop_info = shops.by_name.get(cname, ["Нет данных x1", "скрипт", "x3"])
+              cw, sv = add_call_window(shop_info, sip_ext, uid)
+              set_call_window_callerid(cw, cnum)
+              chaninfo["window"] = cw
+              chaninfo["statusvar"] = sv
+              cw.ring_time = datetime.utcnow()
           else:
-            print("create call window on ringing to show history")
-            shop_info = shops.by_name.get(cname, ["Нет данных x1", "x2", "x3"])
-            cw, sv = add_call_window(cnum, shop_info, sip_ext, uid)
-            chaninfo["window"] = cw
-            chaninfo["statusvar"] = sv
-            cw.ring_time = datetime.utcnow()
-
+            print("no caller name, cannot determine shop, skip window creation")
         else:
           print("cannot parse channel name")
       else:
@@ -603,8 +615,14 @@ def event_listener(event,**kwargs):
       uid2 = event.keys["Uniqueid2"]
       bstate = event.keys["Bridgestate"]
       print(f"\\  {bstate} {uid1}<->{uid2}")
-#      calls[uid1]["localbridge"] = uid2
-#      calls[uid2]["localbridge"] = uid1
+
+      if calls.get(uid1, {}).get("monitored") and calls.get(uid2, {}).get("window"):
+        calls[uid2]["window"].rec_uid = uid1
+        print(f"windows on {uid2} has monitor on {uid1}")
+
+      if calls.get(uid2, {}).get("monitored") and calls.get(uid1, {}).get("window"):
+        calls[uid1]["window"].rec_uid = uid2
+        print(f"windows on {uid1} has monitor on {uid2}")
       # may be we need lists here?
 
     elif event.name=="ExtensionStatus": # Exten Context Hint Status
