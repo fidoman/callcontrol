@@ -92,8 +92,10 @@ quit_button = Button(root, text="Выход", command=root.destroy)
 #quit_button.grid(row=2, column=3)
 
 root.wm_attributes('-topmost', 1)
+root.wm_attributes('-toolwindow', 1)
 root.protocol("WM_DELETE_WINDOW", lambda: None)
 root.bind("<Control-Shift-Q>", root_quit)
+root.bind("<Control-Shift-T>", lambda _: add_call_window("123", "45", "x"))
 
 
 def calculate_position(window_number): # from zero
@@ -116,9 +118,11 @@ def transfer_window(ch):
   status_window_operation("transfer", t, ch)
 
 
-def get_history(ph):
-    cmd_params = urllib.parse.urlencode({'what': 'phone_history', 'ext': asterisk_conf["ext"], 'pw': asterisk_conf["pw"]})
-    data_params = urllib.parse.urlencode({"phone": ph})
+
+def backend_query(what, params):
+    global asterisk_conf
+    cmd_params = urllib.parse.urlencode({'what': what, 'ext': asterisk_conf["ext"], 'pw': asterisk_conf["pw"]})
+    data_params = urllib.parse.urlencode(params)
     url = asterisk_conf["data"] + "?" + cmd_params + "&" + data_params
 
     try:
@@ -128,7 +132,17 @@ def get_history(ph):
         raise Exception("server did not return JSON data")
       else:
         data = json.load(resp)
-        if "keymap" in data:
+        return data
+
+    except Exception as e:
+      print(e)
+
+
+def get_history(ph):
+    hist_data = backend_query('phone_history', {"phone": ph})
+    if not hist_data:
+      return
+    if "keymap" in data:
           km=data["keymap"]
           print(km)
           for x in data["list"]:
@@ -136,11 +150,6 @@ def get_history(ph):
             if tm: 
               tm = datetime.strptime(tm, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=timezone.utc).astimezone(tz=None).strftime("%Y-%m-%d %H:%M:%S")
             yield " ".join((x[km["cl_shop_name"]] or '-', x[km["cl_operator_name"]] or '?', x[km["tag_name"]] or 'no tag', tm or 'unknown'))
-
-    except Exception as e:
-      print(e)
-      yield "error: "+str(e)
-      return
 
 
 def set_call_window_callerid(cw, callerid):
@@ -194,6 +203,11 @@ def add_call_window(shop_info, operator, channel):
   k.grid(row=1, column=2)
   k = Entry(cw, textvariable=cw.order, width=10)
   k.grid(row=1, column=3)
+
+  k = Button(cw, text='Создать', command=lambda: call_window_new_order(cw))
+  k.grid(row=2, column=2)
+  k = Button(cw, text='Обновить', command=lambda: call_window_refresh_orders(cw))
+  k.grid(row=2, column=3)
 
 
   cw.shopname = StringVar(value=shop_info[0])
@@ -309,6 +323,12 @@ def close_call_window(window, close_unanswered = False):
 #print(pos_x, pos_y)
 #root.geometry('%dx%d-%d-%d'%(window_w, window_h, space_h, space_v))
 
+def call_window_new_order(e):
+  d = backend_query("new_order", {"operator": e.operator, "client": e.client.get(), "shop": e.shopname})
+  print(e, d)
+
+def call_window_refresh_orders(e):
+  print(e)
 
 def show_window(x):
   print("show")
