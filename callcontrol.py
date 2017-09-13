@@ -605,7 +605,6 @@ def event_listener(event,**kwargs):
           open_shop_doc(sw.shop_info)
 
 
-
     elif event.name=="Hangup":
       uid = event.keys["Uniqueid"]
       print("\\", uid)
