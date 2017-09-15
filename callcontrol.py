@@ -328,7 +328,8 @@ def call_window_new_order(e):
   print(e, d)
 
 def call_window_refresh_orders(e):
-  print(e)
+  d = backend_query("list_orders", {"operator": e.operator, "client": e.client.get(), "shop": e.shopname})
+  print(e, d)
 
 def show_window(x):
   print("show")
