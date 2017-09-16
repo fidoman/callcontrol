@@ -1,6 +1,6 @@
 #!/bin/sh
 
-#python3 gdocsfetch.py
+python3 gdocsfetch.py
 
 python3 database.py inbound > /etc/asterisk/extensions-inbound.conf
 python3 database.py queues > /etc/asterisk/queues-ops.conf

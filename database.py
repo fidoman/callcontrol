@@ -239,7 +239,7 @@ exten => %(ext)s,n,Morsecode(account is locked)
         ###
         #worktime = 'пн-ср 01:00-22:00'
 
-        if worktime is None:
+        if not worktime: # empty value
           dial+="; no limits on worktime\n"
           dial+="exten => %s,n,Goto(start_ring)\n"%su_myext
 
