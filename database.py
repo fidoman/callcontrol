@@ -136,7 +136,7 @@ host=%(prov_host)s
 
   elif sys.argv[1]=="callout":
     print("; callout part of extensions.conf")
-    TPL="exten => _+7XXXXXXXXXX/%(prov_phone)s,3,Dial(SIP/sipout%(prov_ext)s/7${EXTEN:2},,To)\n"
+    TPL="exten => _+7XXXXXXXXXX/%(prov_phone)s,4,Dial(SIP/sipout%(prov_ext)s/7${EXTEN:2},,To)\n"
     for su_username, su_myext, su_phone in db.prepare("select su_username, su_myext, su_phone from sip_users"):
       print(TPL%{"prov_phone": su_phone, "prov_ext": su_myext})
 

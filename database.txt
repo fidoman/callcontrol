@@ -173,3 +173,35 @@ create table levels (
 
 grant SELECT, insert, update, delete on levels to cc_populate;
 grant SELECT, update on levels_l_id_seq to cc_populate;
+
+
+create user cdr login password '...';
+CREATE TABLE cdr
+(
+id serial NOT NULL,
+calldate timestamp with time zone NOT NULL DEFAULT now(),
+clid character varying(80),
+src character varying(80),
+dst character varying(80),
+dcontext character varying(80),
+channel character varying(80),
+dstchannel character varying(80),
+lastapp character varying(80),
+lastdata character varying(80),
+duration integer NOT NULL DEFAULT 0,
+billsec integer NOT NULL DEFAULT 0,
+disposition character varying(45),
+amaflags integer NOT NULL DEFAULT 0,
+accountcode character varying(20),
+uniqueid character varying(150),
+userfield character varying(255),
+recordingfile varchar,
+CONSTRAINT cdr_pkey PRIMARY KEY (id)
+)
+WITH (OIDS=FALSE);
+CREATE INDEX billsec ON cdr USING btree (billsec);
+CREATE INDEX calldate ON cdr USING btree (calldate);
+CREATE INDEX dst ON cdr USING btree (dst);
+CREATE INDEX src ON cdr USING btree (src);
+
+grant insert on cdr to cdr;
