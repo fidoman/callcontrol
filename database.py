@@ -163,7 +163,8 @@ exten = %(ext)s,hint,SIP/%(ext)s"""
     TPL="""
 exten => %(prov_ext)s,1,Set(CALLERID(num)=+${CALLERID(num)})
 exten => %(prov_ext)s,2,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN},m)
-exten => %(prov_ext)s,3,Set(CALLERID(name)=%(destiname)s)
+exten => %(prov_ext)s,3,Set(CDR(recordingfile)=callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN})
+exten => %(prov_ext)s,4,Set(CALLERID(name)=%(destiname)s)
 %(dial)s
 exten => %(prov_ext)s,n,Voicemail(%(prov_ext)s@missed)
 exten => %(prov_ext)s,n,Hangup
