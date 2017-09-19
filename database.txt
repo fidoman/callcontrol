@@ -158,7 +158,8 @@ create table call_log (
   cl_close_time varchar,
   cl_note varchar,
   cl_order varchar,
-  cl_uid varchar
+  cl_uid varchar,
+  cl_direction varchar
 );
 
 grant select, insert on call_log to cc_data;
