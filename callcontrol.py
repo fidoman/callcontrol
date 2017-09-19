@@ -169,6 +169,7 @@ def add_call_window(shop_info, operator, channel, uid):
   cw = Toplevel()
   cw.wm_attributes('-topmost', 1)
 
+  cw.direction = None
   cw.uid = uid
   cw.shop_info = shop_info
   cw.channel = channel
@@ -304,7 +305,8 @@ def close_call_window(window, close_unanswered = False):
         "note": window.note.get(1.0, END),
         "close_time": datetime.utcnow(),
         "order": window.order.get(),
-	"uid": window.uid
+	"uid": window.uid,
+        "direction": window.direction
     })
 
   #print(id(window))
@@ -472,12 +474,14 @@ def event_listener(event,**kwargs):
         #   other
 
         make_sticky = False
+        direction = None
         if chan.startswith("SIP/sipout"):
           print("call from sipout")
           shop_sipout_ext = calls[callerchan]["destination"]
           int_ext = dial
           channel_of_interest = callerchan
           external = calls[callerchan]["callerid"]
+          direction = "incoming"
         elif dial.startswith("sipout"):
           print("call to sipout")
           channel_of_interest = calledchan
@@ -486,6 +490,7 @@ def event_listener(event,**kwargs):
           # requre that all sipout channel are named as sipoutNNN
           shop_sipout_ext = dial.split("/",1)[0][len("sipout"):]
           make_sticky = True
+          direction = "outgoing"
         else:
           print("other call")
           channel_of_interest = None
@@ -537,6 +542,7 @@ def event_listener(event,**kwargs):
             else:
               shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "", "x3"])
               cw = add_call_window(shop_info, int_ext, channel_of_interest, lbrcalleduid or callerchan)
+              cw.direction = direction
               set_call_window_callerid(cw, unsip(external))
               calls[channel_of_interest]["window"] = cw
               cw.statusvar.set(calls[channel_of_interest]["statedesc"])
@@ -589,6 +595,7 @@ def event_listener(event,**kwargs):
                 print(f"Newstate: create call window on {uid} shop={cname}")
                 shop_info = shops.by_name.get(cname, ["Нет данных x1", "скрипт", "x3"])
                 cw = add_call_window(shop_info, sip_ext, uid, None)
+                cw.direction = "incoming"
                 set_call_window_callerid(cw, cnum)
                 chaninfo["window"] = cw
                 cw.ring_time = datetime.utcnow()
