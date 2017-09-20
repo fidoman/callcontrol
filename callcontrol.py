@@ -421,6 +421,7 @@ def unsip(n):
 calls = {}
 myext = set((asterisk_conf["ext"],))
 state = []
+bridges = {} # asterisk 13 BridgeUniqueid -> [member]
 
 #logf = open("events3.log", "w")
 logf = None
@@ -455,18 +456,18 @@ def event_listener(event,**kwargs):
       calls[event.keys["Uniqueid"]]["channel"] = event.keys["Newname"]
 
 
-    elif event.name=="Dial":
-      dial = event.keys.get("Dialstring")
-      callerchan = event.keys.get("UniqueID") # get info for calling line here
-      calledchan = event.keys.get("DestUniqueID") # attach window here
+    elif event.name=="Dial" or event.name=="DialBegin":
+      print(event.keys)
+      dial = event.keys.get("Dialstring") or event.keys.get("DialString")
+      callerchan = event.keys.get("UniqueID") or event.keys.get("Uniqueid") # get info for calling line here
+      calledchan = event.keys.get("DestUniqueID") or event.keys.get("DestUniqueid") # attach window here
       chan = event.keys.get("Channel")
-      dest = event.keys.get("Destination")
+      dest = event.keys.get("Destination") or event.keys.get("DestChannel")
       subevt = event.keys.get("SubEvent")
       print(f"\\ {subevt} {dial}: {chan} [{callerchan}] -> {dest} [{calledchan}]")
-      print("++", event.keys)
       print("caller:", calls.get(callerchan))
       print("callee:", calls.get(calledchan))
-      if subevt=="Begin":
+      if subevt=="Begin" or event.name=="DialBegin":
         calls[callerchan]["calleduid"] = calledchan
         # classify call:
         #   from external to operator
@@ -650,7 +651,7 @@ def event_listener(event,**kwargs):
         print(event.keys)
 
     elif event.name=="MonitorStart":
-#        print(event.keys)
+        print(event.keys)
         uid = event.keys["Uniqueid"]
         c=calls.get(uid)
         c["monitored"] = True
@@ -669,12 +670,50 @@ def event_listener(event,**kwargs):
 
 
     elif event.name=="LocalBridge":
-      uid1 = event.keys["Uniqueid1"]
-      uid2 = event.keys["Uniqueid2"]
+      #print(event.keys);exit()
+      uid1 = event.keys.get("Uniqueid1") or event.keys.get("LocalOneUniqueid")
+      uid2 = event.keys.get("Uniqueid2") or event.keys.get("LocalTwoUniqueid")
       print("\\  %s<->%s"%(uid1, uid2))
-      calls[uid1]["localbridge"] = uid2
-      calls[uid2]["localbridge"] = uid1
-      # may be we need lists here?
+      if uid1 and uid2:
+        calls[uid1]["localbridge"] = uid2
+        calls[uid2]["localbridge"] = uid1
+        # may be we need lists here?
+
+    elif event.name=="BridgeCreate":
+      buid = event.keys["BridgeUniqueid"]
+      bridges[buid] = [{"type": event.keys["BridgeType"]}, set()] # parameters, members
+
+    elif event.name=="BridgeDestroy":
+      buid = event.keys["BridgeUniqueid"]
+      del bridges[buid]
+
+    elif event.name=="BridgeEnter":
+      buid = event.keys["BridgeUniqueid"]
+      uid = event.keys["Uniqueid"]
+      bridges[buid][1].add(uid)
+
+      changes = False
+      if calls.get(uid, {}).get("monitored"):
+        bridges[buid][0]["rec_uid"] = uid
+        changes = True
+
+      if calls.get(uid, {}).get("window"):
+        bridges[buid][0]["window"] = uid
+        changes = True
+
+      if changes and "window" in bridges[buid][0] and "rec_uid" in bridges[buid][0]:
+        w_chan = bridges[buid][0]["window"]
+        rec_uid = bridges[buid][0]["rec_uid"]
+        print(f"setting rec_uid for window on channel {w_chan} to {rec_uid}")
+        calls[w_chan]["window"].rec_uid = rec_uid
+        del w_chan, rec_uid
+
+    elif event.name=="BridgeLeave":
+      buid = event.keys["BridgeUniqueid"]
+      uid = event.keys["Uniqueid"]
+      bridges[buid][1].remove(uid)
+#      print(event.keys)
+
 
     elif event.name=="Bridge":
       uid1 = event.keys["Uniqueid1"]
