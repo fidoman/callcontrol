@@ -16,6 +16,8 @@ from config import asterisk_conf, call_log_dir, load_data
 from persistqueue import Queue
 call_log = Queue(call_log_dir)
 
+import browserwindow
+
 ########
 def text_status(s):
 # https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+ManagerEvent_ExtensionStatus
@@ -96,6 +98,7 @@ root.wm_attributes('-toolwindow', 1)
 root.protocol("WM_DELETE_WINDOW", lambda: None)
 root.bind("<Control-Shift-Q>", root_quit)
 root.bind("<Control-Shift-T>", lambda _: add_call_window("123", "45", "x", "chan"))
+root.bind("<Control-Shift-W>", lambda _: browserwindow.test_call())
 
 
 def calculate_position(window_number): # from zero
@@ -176,6 +179,8 @@ def add_call_window(shop_info, operator, channel, uid):
   cw.operator = operator # save for logging
   cw.callerid = None
 
+  cw.help_window=None
+
   cw.ring_time = None
   cw.answer_time = None
   cw.end_time = None
@@ -255,11 +260,15 @@ def add_call_window(shop_info, operator, channel, uid):
   return None, None
 
 
-def open_shop_doc(shop_info):
+def open_shop_doc(w, shop_info):
   page = shop_info[1]
   if page:
     print("Open", page)
-    os.system('start '+page)
+    #os.system('start '+page)
+    try:
+      w.help_window=browserwindow.show_help(page)
+    except:
+      print("error on show_help")
   else:
     print("no script page")
 #    os.system('start https://google.com')
@@ -318,6 +327,13 @@ def close_call_window(window, close_unanswered = False):
   else:
     print("window not found")
     return
+
+#  if window.help_window:
+#    try:
+#      window.help_window.close()
+#    except:
+#      print("error on help_window.close()")
+
 
   window.destroy()
   call_windows.pop(pos)
@@ -619,11 +635,11 @@ def event_listener(event,**kwargs):
 
       if cstate=='6': # ANSWER
         print("call", uid, "is Up", calls[uid])
-        sw=calls[uid].get("window")
-        if sw:
-          sw.answer_time = datetime.utcnow()
-          sw.sticky = True
-          open_shop_doc(sw.shop_info)
+        cw=calls[uid].get("window")
+        if cw:
+          cw.answer_time = datetime.utcnow()
+          cw.sticky = True
+          open_shop_doc(cw, cw.shop_info)
 
 
     elif event.name=="Hangup":

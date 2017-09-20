@@ -22,3 +22,16 @@ def load_data(what):
   confdata = json.load(resp)
 
   return confdata
+
+HELPWCONF = "helpwindow.json"
+
+def read_help_window_conf():
+  try:
+    conf = json.load(open(os.path.join(datapath, HELPWCONF)))
+  except:
+    conf = { "x": 20, "y": 20, "w": 400, "h": 400 }
+  return conf
+
+
+def save_help_window_conf(c):
+  json.dump(c, open(os.path.join(datapath, HELPWCONF), "w"))

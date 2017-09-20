@@ -12,7 +12,7 @@ exit 0
 echo elevated
 
 echo installing python modules
-pip install asterisk-ami persist-queue
+pip install asterisk-ami persist-queue selenium
 if errorlevel 1 goto fail
 
 echo install callcontrol
