@@ -59,8 +59,8 @@ def show_help(url, retry=True):
      else:
        print("cannot show help")
 
-show_help("http://gmail.com/")
-print(dir(help_window))
+#show_help("http://gmail.com/")
+#print(dir(help_window))
 
 #  return help_window
 
@@ -68,14 +68,14 @@ print(dir(help_window))
 #  print("error in show_help")
 
 def close_help():
+  global help_window
   pass
-# try:
-#  global help_window
-#  if help_window:
-#    help_window.close()
-#    help_window=None
-# except:
-#  print("error in close_help")
+  try:
+    if help_window:
+      help_window.close()
+      help_window=None
+  except:
+    print("error in close_help")
 
 if __name__=="__main__":
   import time

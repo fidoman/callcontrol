@@ -832,6 +832,7 @@ bgthread = threading.Thread(target=bg_task)
 bg_run = True
 bgthread.start()
 
+browserwindow.show_help("about:blank")
 #root.wm_withdraw()
 root.mainloop()
 #time.sleep(10)
@@ -841,4 +842,6 @@ bg_run = False
 root.quit()
 
 keeper.finished.set()
+browserwindow.close_help()
+
 bgthread.join()
