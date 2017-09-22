@@ -11,7 +11,7 @@ import configparser
 #import secrets
 import itertools, random
 import urllib.parse
-from datetime import datetime
+from datetime import datetime, timezone
 import os
 
 #cgitb.enable(display=0, logdir="/var/log/ccdata")
@@ -135,19 +135,19 @@ try:
       if ring_time == 'None': 
         ring_time = None
       else:
-        ring_time = datetime.strptime(ring_time, '%Y-%m-%d %H:%M:%S.%f')
+        ring_time = datetime.strptime(ring_time, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
 
       answer_time = form.getvalue("answer_time")
       if answer_time == 'None': 
         answer_time = None
       else:
-        answer_time = datetime.strptime(answer_time, '%Y-%m-%d %H:%M:%S.%f')
+        answer_time = datetime.strptime(answer_time, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
 
       end_time = form.getvalue("end_time")
       if end_time == 'None': 
         end_time = None
       else:
-        end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S.%f')
+        end_time = datetime.strptime(end_time, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
 
       note = form.getvalue("note")
       order = form.getvalue("order")
@@ -156,7 +156,7 @@ try:
       if close_time == 'None':
         close_time = None
       else:
-        close_time = datetime.strptime(close_time, '%Y-%m-%d %H:%M:%S.%f')
+        close_time = datetime.strptime(close_time, '%Y-%m-%d %H:%M:%S.%f').replace(tzinfo=timezone.utc)
 
       #rand = secrets.token_urlsafe(32)
       rand = ''.join([random.choice('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789') 
@@ -170,11 +170,20 @@ try:
       db.prepare("insert into call_log ("
 		"cl_rand, cl_tag, cl_operator, cl_operator_name, cl_rec_uid, cl_client_phone, cl_shop_phone, "
 		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note, cl_order, cl_uid, cl_direction) "
-		"values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)")\
+		"values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) "
+		"on conflict (cl_uid) do "
+		"update set (cl_rand, cl_tag, cl_operator, cl_operator_name, cl_rec_uid, cl_client_phone, cl_shop_phone, "
+		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note, cl_order, cl_direction) = "
+		"(EXCLUDED.cl_rand, EXCLUDED.cl_tag, EXCLUDED.cl_operator, EXCLUDED.cl_operator_name, EXCLUDED.cl_rec_uid, "
+		"EXCLUDED.cl_client_phone, EXCLUDED.cl_shop_phone, "
+		"EXCLUDED.cl_shop_name, EXCLUDED.cl_ring_time, EXCLUDED.cl_answer_time, EXCLUDED.cl_end_time, "
+		"EXCLUDED.cl_close_time, EXCLUDED.cl_note, EXCLUDED.cl_order, EXCLUDED.cl_direction)")\
 	(rand, tag_id, op_id, op_name, rec_uid, client_phone, shop_phone, shop_name, ring_time, answer_time,
 	end_time, close_time, note, order, uid, direction)
+#	(rand, tag_id, op_id, op_name, rec_uid, client_phone, shop_phone, shop_name, ring_time.astimezone(tz=None), answer_time.astimezone(tz=None),
+#	end_time.astimezone(tz=None), close_time.astimezone(tz=None), note, order, uid, direction)
 
-      out = "Added"
+      out = {"status": "added"}
 
   elif what == "list_calls":
     """ show call_log table. Use ?what=get_rec&code=rand url's as links to records """
@@ -246,7 +255,7 @@ try:
         a1=a2=''
 
       if type(close_time) is datetime:
-        close_time_str = close_time.strftime("%Y-%m-%d %H:%M:%S")
+        close_time_str = close_time.astimezone().strftime("%Y-%m-%d %H:%M:%S") # better use client's timezone
       else:
         close_time_str = ''
 

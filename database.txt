@@ -161,8 +161,9 @@ create table call_log (
   cl_uid varchar,
   cl_direction varchar
 );
+create unique index on call_log (cl_uid);
 
-grant select, insert on call_log to cc_data;
+grant select, insert, update on call_log to cc_data;
 grant select, update on call_log_cl_id_seq to cc_data;
 grant select on operators to cc_data;
 
