@@ -206,3 +206,4 @@ CREATE INDEX dst ON cdr USING btree (dst);
 CREATE INDEX src ON cdr USING btree (src);
 
 grant insert on cdr to cdr;
+grant select on cdr to cc_data;

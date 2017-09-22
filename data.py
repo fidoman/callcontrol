@@ -37,6 +37,9 @@ def check_user(ext, pw):
 def my_url():
   return os.environ["REQUEST_SCHEME"]+"://"+os.environ["HTTP_HOST"]+os.environ["SCRIPT_NAME"]
 
+def records_url():
+  return os.environ["REQUEST_SCHEME"]+"://"+os.environ["HTTP_HOST"]+"/records/"
+
 
 out = None
 
@@ -316,6 +319,101 @@ try:
     print(doc)
 
     exit()
+
+
+  elif what == "list_cdr":
+    out = []
+    for (calldate, clid, src, dst, dcontext, channel, dstchannel, lastapp, lastdata, duration, billsec, disposition, amaflags, accountcode, uniqueid, userfield, recordingfile, tag_name, cl_order) in \
+        db.prepare("select calldate, clid, src, dst, dcontext, channel, dstchannel, lastapp, lastdata, duration, billsec, disposition, amaflags, accountcode, uniqueid, userfield, recordingfile, tag_name, cl_order from "
+                   "cdr left outer join call_log on (uniqueid=cl_uid) left outer join tags on (cl_tag=tag_id) order by calldate desc"):
+
+      if type(calldate) is datetime:
+        calldate_str = calldate.strftime("%Y-%m-%d %H:%M:%S")
+      else:
+        calldate_str = ''
+
+#      print((("<tr>" if odd else '<tr style="background:lightgray;">') + "<td>"+close_time_str+"</td><td>"+(shop_name or '')+"</td><td>"+(operator_name  or '')+"</td><td>"+(client_phone or '')+"</td>"+\
+#	    "<td>"+("Да" if answer_time else "Нет")+"</td>" +\
+#	    "<td>"+(tag or '')+"</td>" +\
+#	    "<td>"+a1_att+"Скачать"+a2_att +" " + a1_inl+"Прослушать"+a2_inl+"</td>" +\
+#	    "</tr>"))
+      out.append({
+		"calldate": calldate_str, 
+		"clid": clid,
+		"src": src,
+		"dst": dst,
+		"dcontext": dcontext, 
+		"channel": channel, 
+		"dstchannel": dstchannel,
+		"lastapp": lastapp,
+		"lastdata": lastdata, 
+		"duration": duration, 
+		"billsec": billsec,
+		"disposition": disposition,
+		"uniqueid": uniqueid, 
+		"disposition": disposition,
+		"amaflags": amaflags,
+		"accountcode": accountcode,
+		"uniqueid": uniqueid,
+		"userfield": userfield, 
+		"recordingfile": recordingfile,
+                "tag_name": tag_name,
+                "cl_order": cl_order,
+      })
+
+
+    docfields=[
+	("Дата", "calldate"),
+	("CallerID", "clid"),
+	("Вызывающий", "src"),
+        ("Вызываемый", "dst"),
+
+	("Секунды", "billsec"),
+	("Результат", "disposition"),
+
+	("Запись", "recordingfile"),
+	("Тэг", "tag_name"),
+	("Заказ", "cl_order"),
+    ]
+
+
+    doc = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport"
+     content="width=device-width, initial-scale=1, user-scalable=yes">
+  <title>CDR</title>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.8/angular.min.js"></script>
+  <script>
+  angular.module('TableFilterApp', [])
+    .controller('TableFilterController', function($scope) {
+      $scope.calls = """ + json.dumps(out) + """;
+    });
+  </script>
+</head>
+
+<body ng-app="TableFilterApp" ng-controller="TableFilterController">
+
+<table>
+<tr>"""+"".join(["<th>"+x[0]+"</th>" for x in docfields])+"""</tr>
+<tr>"""+"".join(['<td><input ng-model="f.'+x[1]+'"></td>' for x in docfields])+"""</tr>
+<tr ng-repeat="c in calls | filter:f">"""+\
+  " ".join([("<td>{{c."+x[1]+"}}</td>" if x[1]!="recordingfile" else '<td><a href="'+records_url()+'{{c.recordingfile}}">Запись</a></td>') for x in docfields])+\
+"""
+</tr>
+</table>
+</body>
+</html>
+"""
+
+    print("Content-type: text/html; charset=utf-8")
+    print()
+    import codecs
+    sys.stdout = codecs.getwriter("utf-8")(sys.stdout.detach())
+    print(doc)
+    exit()
+
 
 
 
