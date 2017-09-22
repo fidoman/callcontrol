@@ -388,14 +388,16 @@ def bg_task():
         resp = urllib.request.urlopen(url)
         if resp.headers.get_content_type() != 'application/json':
           print("error:", repr(resp.read(1000)))
-          call_log.put(z)
           raise Exception("server did not return JSON data")
         else:
-          print(resp.read(1000))
+          r = json.load(resp)
+          print("result:", r)
+          if r.get("status")!="added":
+            raise Exception("record is not added on server")
 
       except Exception as e:
-        print(e)
-        print("queue drop", repr(z))
+        call_log.put(z)
+        print("put back, error:", e)
 
       call_log.task_done()
 
