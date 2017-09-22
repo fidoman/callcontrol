@@ -518,6 +518,7 @@ def event_listener(event,**kwargs):
         print(f"External {external} on {channel_of_interest} internal {int_ext} shop {shop_sipout_ext}; {callerchan}-->{calledchan}")
 
         lbr = calls[callerchan].get("localbridge")
+        lbrcalleduid = None
         if lbr:
           lbrcalleduid=calls[lbr].get("calleduid")
           print(f"call to {dial} local bridge to {lbr}/{lbrcalleduid}")
@@ -544,23 +545,29 @@ def event_listener(event,**kwargs):
         #shop_ext = calls[callerchan].get("destination", "")
 #        print("Shop ext=", shop_sipout_ext)
 
+        try:
+          int_ext = unsip(int_ext) # for DialBegin with extension as 'SIP/NNN'
+        except:
+          pass
+
         if int_ext in myext:
 #          if len(calls[callerchan].get("callerid", "")) == 3:
 #            print("internal call from", calls[callerchan].get("callerid", ""))
 #          elif event.keys["Channel"].startswith("Local"):
 #            print("local call")
 #          else:
-            print("Dial: create call window on channel", channel_of_interest)
+            print("Dial: create call window on channel uid", channel_of_interest)
             if "window" in calls[channel_of_interest]:
-              print("window exists, rewriting phone:", external)
+              print(f"window exists, rewriting phone: {external} new uid {callerchan}")
               cw = calls[channel_of_interest]["window"]
               set_call_window_callerid(cw, unsip(external))
-              cw.uid = cw.uid or callerchan
+              cw.uid = cw.uid or callerchan 
             else:
               shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "", "x3"])
-              cw = add_call_window(shop_info, int_ext, channel_of_interest, lbrcalleduid or callerchan)
+              cw = add_call_window(shop_info, int_ext, channel_of_interest, callerchan) #lbrcalleduid or callerchan) it is easy on asterisk 13
               cw.direction = direction
               set_call_window_callerid(cw, unsip(external))
+              print(f"new window {cw.direction} uid {cw.uid} phone {unsip(external)}")
               calls[channel_of_interest]["window"] = cw
               cw.statusvar.set(calls[channel_of_interest]["statedesc"])
 
@@ -604,20 +611,20 @@ def event_listener(event,**kwargs):
           if sip_ext_m:
             sip_ext = sip_ext_m.group(1)
             print(f"Extension={sip_ext} caller_name={cname}")
-            if cname:
-              print("need call window")
-              if "window" in chaninfo:
-                print("call window exists")
-              else:
-                print(f"Newstate: create call window on {uid} shop={cname}")
-                shop_info = shops.by_name.get(cname, ["Нет данных x1", "скрипт", "x3"])
-                cw = add_call_window(shop_info, sip_ext, uid, None)
-                cw.direction = "incoming"
-                set_call_window_callerid(cw, cnum)
-                chaninfo["window"] = cw
-                cw.ring_time = datetime.utcnow()
-            else:
-              print("no caller name, cannot determine shop, skip window creation")
+#            if cname:
+#              print("need call window")
+#              if "window" in chaninfo:
+#                print("call window exists")
+#              else:
+#                print(f"Newstate: create call window on {uid} shop={cname}")
+#                shop_info = shops.by_name.get(cname, ["Нет данных x1", "скрипт", "x3"])
+#                cw = add_call_window(shop_info, sip_ext, uid, None)
+#                cw.direction = "incoming"
+#                set_call_window_callerid(cw, cnum)
+#                chaninfo["window"] = cw
+#                cw.ring_time = datetime.utcnow()
+#            else:
+#              print("no caller name, cannot determine shop, skip window creation")
           else:
             print("cannot parse channel name")
         else:
