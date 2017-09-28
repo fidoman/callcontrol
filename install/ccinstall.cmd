@@ -62,7 +62,7 @@ exit
 echo Part 1 OK
 
 echo installing python modules
-pip install asterisk-ami persist-queue
+pip install asterisk-ami persist-queue selenium
 if errorlevel 1 goto fail
 
 echo install callcontrol

@@ -72,6 +72,22 @@ def root_quit(ev):
   global root
   root.destroy()
 
+is_paused = False
+
+def pause_queue_member():
+  global pause_button, is_paused, clientt, asterisk_conf
+  new_state = not is_paused
+  action = SimpleAction(
+    'QueuePause',
+    Interface = 'SIP/'+asterisk_conf["ext"],
+    Paused = new_state,
+    Reason = 'User action'
+  )
+  client.send_action(action, callback=print)
+  is_paused = new_state
+  pause_button.config(text="Unpause" if is_paused else "Pause")
+
+
 root.title("Call Control")
 my_extension = StringVar()
 my_extension.set(asterisk_conf["ext"])
@@ -83,6 +99,8 @@ ext_entry = Entry(root, textvariable=my_extension, width=8, state="readonly")
 ext_entry.grid(row=1, column=2)
 ext_status = Entry(root, textvariable=extstats[my_extension.get()], width=12, state="readonly")
 ext_status.grid(row=1, column=3)
+pause_button = Button(root, text="Pause", command = pause_queue_member)
+pause_button.grid(row=1, column=4)
 
 #add_window_button = Button(root, text="Тест", command = lambda: add_call_window("123", "45", "x", "chan"))
 #add_window_button.grid(row=2, column=1)
@@ -841,7 +859,11 @@ bgthread = threading.Thread(target=bg_task)
 bg_run = True
 bgthread.start()
 
-browserwindow.show_help("about:blank")
+try:
+  browserwindow.show_help("about:blank")
+except:
+  pass
+
 #root.wm_withdraw()
 root.mainloop()
 #time.sleep(10)
