@@ -3,6 +3,8 @@ import postgresql
 import random
 import re
 from itertools import count
+import urllib.parse
+import urllib.request
 
 """ 
 Module for database access
@@ -136,7 +138,7 @@ host=%(prov_host)s
 
   elif sys.argv[1]=="callout":
     print("; callout part of extensions.conf")
-    TPL="exten => _+7XXXXXXXXXX/%(prov_phone)s,4,Dial(SIP/sipout%(prov_ext)s/7${EXTEN:2},,To)\n"
+    TPL="exten => _+7XXXXXXXXXX/%(prov_phone)s,5,Dial(SIP/sipout%(prov_ext)s/7${EXTEN:2},,To)\n"
     for su_username, su_myext, su_phone in db.prepare("select su_username, su_myext, su_phone from sip_users"):
       print(TPL%{"prov_phone": su_phone, "prov_ext": su_myext})
 
@@ -161,14 +163,15 @@ exten = %(ext)s,hint,SIP/%(ext)s"""
     ops = load_operators()
 
     TPL="""
-exten => %(prov_ext)s,1,Set(CALLERID(num)=+${CALLERID(num)})
-exten => %(prov_ext)s,2,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN},m)
-exten => %(prov_ext)s,3,Set(CDR(recordingfile)=callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN})
-exten => %(prov_ext)s,4,Set(CALLERID(name)=%(destiname)s)
-exten => %(prov_ext)s,n,Set(CHANNEL(hangup_handler_push)=inbound-hangup,s,1(${CALLERID(num)},${EXTEN}))
+exten => %(prov_ext)s,1,System(/usr/local/bin/log_call.py e:${EXTEN} u:${UNIQUEID} cid:${CALLERID(num)} dialp:${DIALEDPEERNUMBER} dnid:${DNID})
+exten => %(prov_ext)s,n,Set(CALLERID(num)=+${CALLERID(num)})
+exten => %(prov_ext)s,n,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN},m)
+exten => %(prov_ext)s,n,Set(CDR(recordingfile)=callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN})
+exten => %(prov_ext)s,n,Set(CALLERID(name)=%(destiname)s)
+;exten => %(prov_ext)s,n,Set(CHANNEL(hangup_handler_push)=inbound-hangup,s,1(${CALLERID(num)},${EXTEN}))
 %(dial)s
 exten => %(prov_ext)s,n,Voicemail(%(prov_ext)s@missed)
-exten => %(prov_ext)s,n,Set(CHANNEL(hangup_handler_pop)=)
+;exten => %(prov_ext)s,n,Set(CHANNEL(hangup_handler_pop)=)
 exten => %(prov_ext)s,n,Hangup
     """
 
@@ -179,7 +182,7 @@ exten => %(prov_ext)s,n,Hangup
       return ''
 
     def mk_queue(dest, pri, qname, timeout, is_first):
-      return "exten => %s,%s,Queue(%s,,,,%d)\n"%(dest, pri+"(start_ring)" if is_first else pri, qname, timeout) + \
+      return "exten => %s,%s,Queue(%s,,,,%d)\n"%(dest, pri+"(xx_start_ring)" if is_first else pri, qname, timeout) + \
              "exten => %s,n,Wait(1)\n"%dest
 
     def get_group(ext):
@@ -296,6 +299,9 @@ exten => %(ext)s,n,Morsecode(account is locked)
 #          phases.append(list(get_neighbours(m1, shop_queue3) | get_neighbours(m2, shop_queue3)))
 #        dial += mk_dial(su_myext, "n", list(q3))
 
+
+        dial += "exten => %s,n(start_ring),Verbose(0,Start Ring %s - log)\n"%(su_myext, su_myext)
+
         for ph, n in zip(phases, count()):
           last_iter = n==len(phases)-1
           print(";", n, ph, last_iter)
@@ -356,3 +362,19 @@ exten => %(ext)s,n,Morsecode(account is locked)
     print("[missed]")
     for shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, worktime in db.prepare("select shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, l_worktime from shops, sip_users, levels where su_phone=shop_phone and l_name=shop_level order by su_myext"):
       print(su_myext, "=>", "xxxxpwpwpw,"+shop_name+","+"sergey@fidoman.ru"+",,attach=yes|delete=1|emailsubject=Missed call from ${VM_CALLERID}")
+
+  elif sys.argv[1]=="load_shop_ids":
+    queries = json.load(open("lk.json"))
+    for (shop_name,) in db.prepare("select shop_name from shops"):
+      url=queries["shop_id"]%{"shop_name": urllib.parse.quote(shop_name)}
+      try:
+        resp = urllib.request.urlopen(url)
+        if resp.headers.get_content_type() != 'application/json':
+          print("error:", repr(resp.read(1000)))
+          raise Exception("server did not return JSON data")
+        else:
+          data = json.loads(resp.read().decode("utf-8"))
+          print(shop_name, len(data['items']))
+
+      except Exception as e:
+        print(e)

@@ -18,6 +18,8 @@ import os
 
 form = cgi.FieldStorage()
 
+def ext_from_channel(c):
+  return "-".join(c.split("-")[:-1]) if type(c) is str else '-'
 
 
 dbconn = json.load(open("database.json"))
@@ -332,8 +334,8 @@ try:
 
   elif what == "list_cdr":
     out = []
-    for (calldate, clid, src, dst, dcontext, channel, dstchannel, lastapp, lastdata, duration, billsec, disposition, amaflags, accountcode, uniqueid, userfield, recordingfile, tag_name, cl_order) in \
-        db.prepare("select calldate, clid, src, dst, dcontext, channel, dstchannel, lastapp, lastdata, duration, billsec, disposition, amaflags, accountcode, uniqueid, userfield, recordingfile, tag_name, cl_order from "
+    for (calldate, clid, src, dst, dcontext, channel, dstchannel, lastapp, lastdata, duration, billsec, disposition, amaflags, accountcode, uniqueid, userfield, recordingfile, tag_name, cl_order, cl_operator_name, cl_direction) in \
+        db.prepare("select calldate, clid, src, dst, dcontext, channel, dstchannel, lastapp, lastdata, duration, billsec, disposition, amaflags, accountcode, uniqueid, userfield, recordingfile, tag_name, cl_order, cl_operator_name, cl_direction from "
                    "cdr left outer join call_log on (uniqueid=cl_uid) left outer join tags on (cl_tag=tag_id) order by calldate desc"):
 
       if type(calldate) is datetime:
@@ -350,39 +352,44 @@ try:
 		"calldate": calldate_str, 
 		"clid": clid,
 		"src": src,
-		"dst": dst,
-		"dcontext": dcontext, 
+		"dst": dst+"@"+dcontext,
+#		"dcontext": dcontext, 
 		"channel": channel, 
 		"dstchannel": dstchannel,
-		"lastapp": lastapp,
-		"lastdata": lastdata, 
+		"lastapp": str(lastapp)+"/"+str(lastdata),
+#	"lastdata": lastdata, 
 		"duration": duration, 
 		"billsec": billsec,
 		"disposition": disposition,
 		"uniqueid": uniqueid, 
-		"disposition": disposition,
 		"amaflags": amaflags,
 		"accountcode": accountcode,
 		"uniqueid": uniqueid,
 		"userfield": userfield, 
-		"recordingfile": recordingfile,
+		"recordingfile": recordingfile+".wav" if recordingfile else "about:blank",
                 "tag_name": tag_name,
                 "cl_order": cl_order,
+                "cl_direction": cl_direction,
+                "cl_operator_name": cl_operator_name or ext_from_channel(channel if dst.startswith("+") else dstchannel),
       })
 
 
     docfields=[
 	("Дата", "calldate"),
+	("Тип", "cl_direction"),
 	("CallerID", "clid"),
 	("Вызывающий", "src"),
         ("Вызываемый", "dst"),
-
-	("Секунды", "billsec"),
-	("Результат", "disposition"),
-
-	("Запись", "recordingfile"),
 	("Тэг", "tag_name"),
 	("Заказ", "cl_order"),
+	("Оператор", "cl_operator_name"),
+#       ("Канал", "channel"),
+#        ("Канал назначения", "dstchannel"),
+#("Вызов", "lastapp"),
+	("Секунды всего", "duration"),
+	("Секунды разговора", "billsec"),
+	("Результат", "disposition"),
+	("Запись", "recordingfile"),
     ]
 
 
@@ -404,14 +411,16 @@ try:
 
 <body ng-app="TableFilterApp" ng-controller="TableFilterController">
 
+<div style="white-space: nowrap;">
 <table>
-<tr>"""+"".join(["<th>"+x[0]+"</th>" for x in docfields])+"""</tr>
+<tr>"""+"".join(["<th align=left>"+x[0]+"</th>" for x in docfields])+"""</tr>
 <tr>"""+"".join(['<td><input ng-model="f.'+x[1]+'"></td>' for x in docfields])+"""</tr>
 <tr ng-repeat="c in calls | filter:f">"""+\
   " ".join([("<td>{{c."+x[1]+"}}</td>" if x[1]!="recordingfile" else '<td><a href="'+records_url()+'{{c.recordingfile}}">Запись</a></td>') for x in docfields])+\
 """
 </tr>
 </table>
+</div>
 </body>
 </html>
 """
