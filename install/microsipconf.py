@@ -58,6 +58,12 @@ def save():
 
   root.quit()
 
+#try:
+conf = json.load(open(os.path.join(asterdstpath, ASTERCONF)))
+print(conf)
+#except:
+#  conf = {}
+
 root = Tk()
 
 Label(root, text="Сервер").grid(row=1,column=1)
@@ -65,11 +71,14 @@ Label(root, text="Номер").grid(row=2,column=1)
 Label(root, text="Пароль").grid(row=3,column=1)
 
 srv = Entry(root)
+srv.insert(END, conf.get("address", ""))
 srv.grid(row=1, column=2)
 srv.focus()
 ext = Entry(root)
+ext.insert(END, conf.get("ext", ""))
 ext.grid(row=2, column=2)
 pw = Entry(root)
+pw.insert(END, conf.get("pw", ""))
 pw.grid(row=3, column=2)
 
 Button(root, command=save, text="Сохранить").grid(row=100, column=1, columnspan=2, sticky=W+E)
