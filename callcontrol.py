@@ -169,7 +169,7 @@ def get_history(ph):
           for x in hist_data["list"]:
             tm = x[km["cl_ring_time"]]
             if tm: 
-              tm = datetime.strptime(tm, "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=timezone.utc).astimezone(tz=None).strftime("%Y-%m-%d %H:%M:%S")
+              tm = datetime.strptime(tm[:-6], "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=timezone.utc).astimezone(tz=None).strftime("%Y-%m-%d %H:%M:%S")
             yield " ".join((x[km["cl_shop_name"]] or '-', x[km["cl_operator_name"]] or '?', x[km["tag_name"]] or 'no tag', tm or 'unknown'))
 
 

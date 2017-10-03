@@ -58,11 +58,10 @@ def save():
 
   root.quit()
 
-#try:
-conf = json.load(open(os.path.join(asterdstpath, ASTERCONF)))
-print(conf)
-#except:
-#  conf = {}
+try:
+  conf = json.load(open(os.path.join(asterdstpath, ASTERCONF)))
+except:
+  conf = {}
 
 root = Tk()
 
