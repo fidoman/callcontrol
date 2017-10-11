@@ -15,7 +15,7 @@ def test_call():
     o.add_argument("disable-infobars");
     o.add_argument("--window-size=%(w)d,%(h)d"%c);
     o.add_argument("--window-position=%(x)d,%(y)d"%c);
-    test_window=webdriver.Chrome(chrome_options=o)
+    test_window=webdriver.Chrome(chrome_options=o, service_args=["--verbose"])
 #    test_window.set_window_position(c["x"], c["y"])
 #    test_window.set_window_size(c["w"], c["h"])
 

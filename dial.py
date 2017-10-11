@@ -16,26 +16,9 @@ from order import order_window
 
 from config import asterisk_conf, load_data
 
-shops = load_data("shops")
 
-dialw = Tk()
-
-def srch_upd(newval, idx, action):
-#  global shops_list, shops
-  try:
-#    shops_list.delete(0, END)
-#    for s in shops:
-#      sname=s[0]
-#      if sname.lower().startswith(newval.lower()):
-#        shops_list.insert(END, sname)
-    filter_shops(newval)
-  except:
-    traceback.print_exc()
-  return True #if len(newval)<=3 else False
 
 #srch_var = StringVar()
-srch_entry = Entry(dialw, validate="key", validatecommand=(dialw.register(srch_upd),'%P','%i','%d'))
-srch_entry.pack()
 
 #shops_list = Listbox(dialw)
 #shops_list.pack()
@@ -53,25 +36,8 @@ def normalize_phone(ph):
 
   return ph[1:]
 
-shops_frame = Frame(dialw)
-shops_frame.pack()
 
-shop_frames = []
-
-row=1
-for s in shops:
-  fr = Frame(shops_frame)
-  shop_label = Label(fr, text=s[0], width=36)
-  shop_label.pack(side=LEFT, fill=X, expand=True)
-  ph = normalize_phone(s[1]) or 'Общий'
-  shop_phone = Button(fr, text=ph, width=15, command=lambda s=s[0], ph=ph: order_window(s, ph))
-  shop_phone.pack(side=LEFT)
-  fr.grid(column=0, row=row, sticky=W)
-  shop_frames.append((fr, s[0], row))
-  row+=1
-
-def filter_shops(filter_str):
-  global shop_frames
+def filter_shops(filter_str, shop_frames):
   for fr, name, row in shop_frames:
     if name.lower().find(filter_str.lower())!=-1:
       fr.grid(row=row)
@@ -90,5 +56,55 @@ def filter_shops(filter_str):
 #    shop_phone = Label(shops_frame, text=normalize_phone(s[1]))
 #    shop_phone.grid(row=row, column=2)
 #    row+=1
-srch_entry.focus()
-dialw.mainloop()
+
+def srch_upd(newval, idx, action, shop_frames):
+#  global shops_list, shops
+  try:
+#    shops_list.delete(0, END)
+#    for s in shops:
+#      sname=s[0]
+#      if sname.lower().startswith(newval.lower()):
+#        shops_list.insert(END, sname)
+    filter_shops(newval, shop_frames)
+  except:
+    traceback.print_exc()
+  return True #if len(newval)<=3 else False
+
+
+def dial(root):
+  if root is None:
+    dialw = Tk()
+  else:
+    dialw = Toplevel(root)
+
+  shop_frames = []
+
+  srch_entry = Entry(dialw, validate="key", validatecommand=(dialw.register(lambda x, y, z, t=shop_frames: srch_upd(x, y, z ,t)),'%P','%i','%d'))
+  srch_entry.pack()
+
+  shops = load_data("shops")
+  shops_frame = Frame(dialw)
+  shops_frame.pack()
+
+  row=1
+  for s in shops:
+    fr = Frame(shops_frame)
+    shop_label = Label(fr, text=s[0], width=36)
+    shop_label.pack(side=LEFT, fill=X, expand=True)
+    ph = normalize_phone(s[1]) or 'Общий'
+    shop_phone = Button(fr, text=ph, width=15, command=lambda s=s[0], ph=ph: order_window(s, ph))
+    shop_phone.pack(side=LEFT)
+    fr.grid(column=0, row=row, sticky=W)
+    shop_frames.append((fr, s[0], row))
+    row+=1
+
+  srch_entry.focus()
+
+
+
+
+  if not root:
+    dialw.mainloop()
+
+if __name__ == "__main__":
+  dial(None)
