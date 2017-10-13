@@ -175,38 +175,61 @@ def backend_query(what, params):
       print(e)
 
 
-def get_history(ph):
-    hist_data = backend_query('phone_history', {"phone": ph})
+def get_history(ph, shop):
+    hist_data = backend_query('phone_history', {"phone": ph, "shop": shop})
     if not hist_data:
       return
     if "keymap" in hist_data:
+          hist_list = []
+          hist_full = {}
+
           km=hist_data["keymap"]
           print(km)
           for x in hist_data["list"]:
             tm = x[km["cl_ring_time"]]
             if tm: 
               tm = datetime.strptime(tm[:-6], "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=timezone.utc).astimezone(tz=None).strftime("%Y-%m-%d %H:%M:%S")
-            yield " ".join((x[km["cl_shop_name"]] or '-', x[km["cl_operator_name"]] or '?', x[km["tag_name"]] or 'no tag', tm or 'unknown'))
+            rec= " ".join((x[km["cl_shop_name"]] or '-', x[km["cl_operator_name"]] or '?', x[km["tag_name"]] or 'no tag', tm or 'unknown'))
+            hist_list.append(rec)
+            hist_full[rec] = x
+          return hist_list, km, hist_full
 
 def show_history_details(evt, w):
   print("history", evt)
   if w.history_details_window:
     w.history_details_window.destroy()
     w.history_details_window = None
-  else:
+
+  if True:
     detw=Toplevel(w)
     detw.transient(w)
-    detw.geometry("100x100+200+200")
+    x, y = w.winfo_x(), w.winfo_y()
+    x-=400
+    if x<0: x=0
+    y-=400
+    if y<0: y=0
+    detw.geometry(f"390x350+{x}+{y}")
     w.history_details_window = detw
-
+    t = Text(detw)
+    t.pack(fill=BOTH)
+    for i in w.history.curselection():
+      i = int(i)
+      print(w.history.get(i))
+      print(w.history_data[w.history.get(i)])
+      for k, n in w.history_keys.items():
+        print(k, w.history_data[w.history.get(i)][n])
+        t.insert(END, f"{k}: {w.history_data[w.history.get(i)][n]}\n")
 
 def set_call_window_callerid(cw, callerid):
   cw.callerid = callerid
   cw.title("%s->%s [%s] %s"%(cw.callerid, cw.shop_info[0], cw.operator, cw.channel))
   cw.client.set(callerid)
   cw.history.delete(0, END)
-  for history_record in get_history(callerid):
+  hist_list, km, hist_full = get_history(callerid, cw.shopphone)
+  for history_record in hist_list:
     cw.history.insert(END, history_record)
+  cw.history_data = hist_full
+  cw.history_keys = km
 
 
 def add_call_window(shop_info, operator, channel, uid):
