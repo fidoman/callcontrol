@@ -82,6 +82,10 @@ def dial(root):
   srch_entry = Entry(dialw, validate="key", validatecommand=(dialw.register(lambda x, y, z, t=shop_frames: srch_upd(x, y, z ,t)),'%P','%i','%d'))
   srch_entry.pack()
 
+  # add list of ...
+  #   my shops and their orders
+  #   list of scheduled calls
+
   shops = load_data("shops")
   shops_frame = Frame(dialw)
   shops_frame.pack()

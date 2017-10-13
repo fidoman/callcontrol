@@ -36,6 +36,7 @@ def order_window(shop, shop_ph):
   ow = Toplevel()
   s = Label(ow, text=shop)
   s.pack()
+  # get all orders for selected shop 
   call_fr = Frame(ow)
   ph_l = Label(call_fr, text="Телефон клиента:")
   ph_l.pack(side=LEFT)
