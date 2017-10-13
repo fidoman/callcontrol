@@ -241,7 +241,8 @@ try:
 #    odd = True
 
     out = []
-    for (shop_name, operator_name, client_phone, close_time, rand, tag, answer_time, order) in db.prepare("select cl_shop_name, cl_operator_name, cl_client_phone, cl_close_time, cl_rand, tag_name, cl_answer_time, cl_order from call_log, tags where tag_id=cl_tag order by cl_close_time"):
+    for (shop_name, operator_name, direction, client_phone, close_time, 
+         rand, tag, answer_time, order) in db.prepare("select cl_shop_name, cl_operator_name, cl_direction, cl_client_phone, cl_close_time, cl_rand, tag_name, cl_answer_time, cl_order from call_log, tags where tag_id=cl_tag order by cl_close_time"):
       if rand:
         params_att = urllib.parse.urlencode({"what": "get_rec", "disposition": "attachment", "code": rand.strip()})
         params_inl = urllib.parse.urlencode({"what": "get_rec", "disposition": "inline", "code": rand.strip()})
@@ -269,6 +270,7 @@ try:
       out.append({"close_time": close_time_str,
                   "shop_name": shop_name or '',
                   "operator_name": operator_name  or '',
+                  "direction": direction or '',
                   "client_phone": client_phone or '',
                   "answered": "Да" if answer_time else "Нет",
                   "tag": tag or '',
@@ -296,11 +298,12 @@ try:
 <body ng-app="TableFilterApp" ng-controller="TableFilterController">
 
 <table>
-<tr><th>Время завершения</th><th>Магазин</th><th>Оператор</th><th>Клиент</th><th>Заказ</th><th>Дозвон</th><th>Тэг</th><th>Запись</th></tr>
+<tr><th>Время завершения</th><th>Магазин</th><th>Оператор</th><th>Направление</th><th>Клиент</th><th>Заказ</th><th>Дозвон</th><th>Тэг</th><th>Запись</th></tr>
 <tr>
   <td><input ng-model="f.close_time"></td>
   <td><input ng-model="f.shop_name"></td>
   <td><input ng-model="f.operator_name"></td>
+  <td><input ng-model="f.direction"></td>
   <td><input ng-model="f.client_phone"></td>
   <td><input ng-model="f.order"></td>
   <td><input ng-model="f.answered"></td>
@@ -311,6 +314,7 @@ try:
   <td>{{c.close_time}}</td>
   <td>{{c.shop_name}}</td>
   <td>{{c.operator_name}}</td>
+  <td>{{c.direction}}</td>
   <td>{{c.client_phone}}</td>
   <td>{{c.order}}</td>
   <td>{{c.answered}}</td>
@@ -352,7 +356,7 @@ try:
 		"calldate": calldate_str, 
 		"clid": clid,
 		"src": src,
-		"dst": dst+"@"+dcontext,
+		"dst": (dst or '')+"@"+(dcontext or''),
 #		"dcontext": dcontext, 
 		"channel": channel, 
 		"dstchannel": dstchannel,
@@ -370,7 +374,7 @@ try:
                 "tag_name": tag_name,
                 "cl_order": cl_order,
                 "cl_direction": cl_direction,
-                "cl_operator_name": cl_operator_name or ext_from_channel(channel if dst.startswith("+") else dstchannel),
+                "cl_operator_name": cl_operator_name or ext_from_channel(channel if dst and dst.startswith("+") else dstchannel),
       })
 
 

@@ -54,7 +54,7 @@ $op_hist$ language plpgsql;
 
 create trigger change_op_group after insert or update or delete on operators for each row execute procedure operators_history();
 
-grant select, insert, update on operators to cc_populate;
+grant select, insert, update, delete on operators to cc_populate;
 grant select on operators_op_id_seq to cc_populate;
 grant select, insert, update on operator_ext_history to cc_populate;
 grant select, insert, update on operator_group_history to cc_populate;
@@ -209,3 +209,13 @@ CREATE INDEX src ON cdr USING btree (src);
 
 grant insert on cdr to cdr;
 grant select on cdr to cc_data;
+
+create table scheduled_calls (
+oc_id bigserial not null,
+oc_shop_name varchar,
+oc_shop_phone varchar,
+oc_client_phone varchar,
+oc_after_call varchar,
+oc_order varchar,
+oc_when timestamp with time zone
+);

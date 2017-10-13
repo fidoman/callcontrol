@@ -145,6 +145,8 @@ def update_data_in_table(db, table, column_prefix, master_field, data_fields, da
     q_ins = db.prepare("insert into " + table + " (" + master_column + ", " + ", ".join(columns) + ") values ($1, " + ", ".join(columns_argn_n) + ")")
     q_upd = db.prepare("update " + table + " set " + ", ".join(columns_argn_set) + " where " + master_column + "=$1")
 
+    q_masters = db.prepare("select " + master_column + " from " + table)
+
     max_field = max(data_field_pos.values())
 
     masters = set()
@@ -183,7 +185,11 @@ def update_data_in_table(db, table, column_prefix, master_field, data_fields, da
           print(d_master, d_fields)
           q_upd(d_master, *d_fields)
 
-
+    for (m,) in q_masters():
+      if not m: continue
+      print(m, m.lower() in masters)
+      if m.lower() not in masters:
+        db.prepare("delete from "+table+" where "+master_column+"=$1")(m)
 
 if __name__ == '__main__':
     all_data = fetch_all()
@@ -199,7 +205,7 @@ if __name__ == '__main__':
 
     update_data_in_table(db, "levels", "l_", "name", ["worktime"], level_cols, levels_data)
 
-    update_data_in_table(db, "operators", "op_", "name", ["group", "ext", "location"], managers_cols, managers_data)
+    update_data_in_table(db, "operators", "op_", "ext", ["name", "group", "location"], managers_cols, managers_data)
 
     update_data_in_table(db, "shops", "shop_",
                 "name", ['phone', 'script', 'level', 'manager', 'manager2', 'active', 'queue2', 'queue3'],
