@@ -145,6 +145,15 @@ def transfer_window(ch):
   t.title("transfer "+ch)
   status_window_operation("transfer", t, ch)
 
+def hangup(channel):
+  action = SimpleAction(
+    'Hangup',
+    Channel=channel
+  )
+  print("Hangup", channel)
+  stat = client.send_action(action)
+  print(stat)
+
 
 
 def backend_query(what, params):
@@ -219,6 +228,10 @@ def add_call_window(shop_info, operator, channel, uid):
   sv_data = Label(cw, textvariable = cw.statusvar)
   sv_label.grid(row=0,column=0)
   sv_data.grid(row=0,column=1)
+
+  transf_b = Button(cw, text='Сброс', command=lambda ch=channel: hangup(ch))
+  transf_b.grid(row=0,column=2)
+
   transf_b = Button(cw, text='Переключить', command=lambda ch=channel: transfer_window(ch))
   transf_b.grid(row=0,column=3)
 
@@ -240,7 +253,6 @@ def add_call_window(shop_info, operator, channel, uid):
   k.grid(row=2, column=2)
   k = Button(cw, text='Обновить', command=lambda: call_window_refresh_orders(cw))
   k.grid(row=2, column=3)
-
 
   cw.shopname = StringVar(value=shop_info[0])
 
@@ -511,6 +523,7 @@ def event_listener(event,**kwargs):
       print("caller:", calls.get(callerchan))
       print("callee:", calls.get(calledchan))
       if subevt=="Begin" or event.name=="DialBegin":
+       if callerchan:
         calls[callerchan]["calleduid"] = calledchan
         # classify call:
         #   from external to operator
@@ -613,7 +626,9 @@ def event_listener(event,**kwargs):
 
             cw.ring_time = datetime.utcnow()
 
-            calls[callerchan]["calleduid"] = calledchan
+            #calls[callerchan]["calleduid"] = calledchan
+       else:
+          print("call without caller channel")
 
     elif event.name=="Newstate":
       cstate = event.keys.get("ChannelState")
