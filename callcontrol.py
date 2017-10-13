@@ -76,7 +76,7 @@ is_paused = False
 
 import dial
 
-def do_call():
+def do_dial():
   dial.dial(root)
 
 def pause_queue_member():
@@ -104,7 +104,7 @@ ext_entry = Entry(root, textvariable=my_extension, width=8, state="readonly")
 ext_entry.grid(row=1, column=2)
 ext_status = Entry(root, textvariable=extstats[my_extension.get()], width=12, state="readonly")
 ext_status.grid(row=1, column=3)
-call_button = Button(root, text="Call", command = do_call)
+call_button = Button(root, text="Dial", command = do_dial)
 call_button.grid(row=1, column=4)
 pause_button = Button(root, text="Pause", command = pause_queue_member)
 pause_button.grid(row=1, column=5)
@@ -187,6 +187,17 @@ def get_history(ph):
             if tm: 
               tm = datetime.strptime(tm[:-6], "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=timezone.utc).astimezone(tz=None).strftime("%Y-%m-%d %H:%M:%S")
             yield " ".join((x[km["cl_shop_name"]] or '-', x[km["cl_operator_name"]] or '?', x[km["tag_name"]] or 'no tag', tm or 'unknown'))
+
+def show_history_details(evt, w):
+  print("history", evt)
+  if w.history_details_window:
+    w.history_details_window.destroy()
+    w.history_details_window = None
+  else:
+    detw=Toplevel(w)
+    detw.transient(w)
+    detw.geometry("100x100+200+200")
+    w.history_details_window = detw
 
 
 def set_call_window_callerid(cw, callerid):
@@ -284,6 +295,9 @@ def add_call_window(shop_info, operator, channel, uid):
   hscroll.config(command=history.yview)
   hscroll.pack(side=RIGHT, fill=Y)
   history.pack(side=LEFT, fill=BOTH, expand=1)
+
+  history.bind("<Double-Button-1>", lambda x, parent=cw: show_history_details(x, parent))
+  cw.history_details_window = None
 
   hframe.grid(row=7, column=0, columnspan=4, sticky=W+E)
 
@@ -881,10 +895,18 @@ bgthread = threading.Thread(target=bg_task)
 bg_run = True
 bgthread.start()
 
-try:
-  browserwindow.show_help("about:blank")
-except:
-  pass
+def init_help_window():
+  try:
+    browserwindow.show_help("about:blank")
+    print("help window have been initialized")
+  except Exception as e:
+    print(e)
+
+
+
+bg2 = threading.Thread(target=init_help_window)
+bg2.start()
+
 
 #root.wm_withdraw()
 root.mainloop()
