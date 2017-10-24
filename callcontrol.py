@@ -80,7 +80,7 @@ def do_dial():
   dial.dial(root)
 
 def pause_queue_member():
-  global pause_button, is_paused, clientt, asterisk_conf
+  global pause_button, is_paused, asterisk_conf
   new_state = not is_paused
   action = SimpleAction(
     'QueuePause',
@@ -423,10 +423,19 @@ def close_call_window(window, close_unanswered = False):
 #root.geometry('%dx%d-%d-%d'%(window_w, window_h, space_h, space_v))
 
 def call_window_new_order(e):
-  d = backend_query("new_order", {"operator": e.operator, "client": e.client.get(), "shop": e.shopname})
-  print(e, d)
+  args = {"operator": e.operator, "client": e.client.get(), "shop": e.shopname.get()}
+  d = backend_query("new_order", args)
+  print(args, d)
+  if d is None:
+    return
+  e.order.set(d["order_id"])
+  os.system("start "+d["order_url"])
+  #return d
+  # start browser window
 
 def call_window_refresh_orders(e):
+  # get list of orders of current client and populate menu
+  args = {"operator": e.operator, "client": e.client.get(), "shop": e.shopname.get()}
   d = backend_query("list_orders", {"operator": e.operator, "client": e.client.get(), "shop": e.shopname})
   print(e, d)
 
