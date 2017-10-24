@@ -461,6 +461,13 @@ try:
     if r: out["keymap"] = r.keymap
 
 
+  elif what == "new_order":
+    out = { "order_id": "-1", "order_url": "about:blank" }
+
+  elif what == "list_orders":
+    out = { "order_id": "-1", "order_url": "about:blank" }
+
+
 except Exception as e:
   print("Content-type: text/plain\n")
   print("error:", str(e))
