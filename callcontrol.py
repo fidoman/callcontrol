@@ -11,7 +11,7 @@ import re
 
 from statuswindow import status_window_operation
 
-from config import asterisk_conf, call_log_dir, load_data
+from config import asterisk_conf, call_log_dir, load_data, backend_query
 
 from persistqueue import Queue
 call_log = Queue(call_log_dir)
@@ -156,23 +156,6 @@ def hangup(channel):
 
 
 
-def backend_query(what, params):
-    global asterisk_conf
-    cmd_params = urllib.parse.urlencode({'what': what, 'ext': asterisk_conf["ext"], 'pw': asterisk_conf["pw"]})
-    data_params = urllib.parse.urlencode(params)
-    url = asterisk_conf["data"] + "?" + cmd_params + "&" + data_params
-
-    try:
-      resp = urllib.request.urlopen(url)
-      if resp.headers.get_content_type() != 'application/json':
-        print("error:", repr(resp.read(1000)))
-        raise Exception("server did not return JSON data")
-      else:
-        data = json.load(resp)
-        return data
-
-    except Exception as e:
-      print(e)
 
 
 def get_history(ph, shop):

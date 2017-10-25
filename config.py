@@ -35,3 +35,21 @@ def read_help_window_conf():
 
 def save_help_window_conf(c):
   json.dump(c, open(os.path.join(datapath, HELPWCONF), "w"))
+
+def backend_query(what, params):
+    global asterisk_conf
+    cmd_params = urllib.parse.urlencode({'what': what, 'ext': asterisk_conf["ext"], 'pw': asterisk_conf["pw"]})
+    data_params = urllib.parse.urlencode(params)
+    url = asterisk_conf["data"] + "?" + cmd_params + "&" + data_params
+
+    try:
+      resp = urllib.request.urlopen(url)
+      if resp.headers.get_content_type() != 'application/json':
+        print("error:", repr(resp.read(1000)))
+        raise Exception("server did not return JSON data")
+      else:
+        data = json.load(resp)
+        return data
+
+    except Exception as e:
+      print(e)
