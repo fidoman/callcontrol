@@ -4,7 +4,13 @@ import urllib.parse
 import urllib.request
 
 ASTERCONF = "asterisk.json"
-datapath = os.path.expandvars(r"%APPDATA%\callcontrol")
+
+#if os.uname().sysname=='Linux':
+try:
+  os.uname
+  datapath = os.path.expandvars(r"$HOME/.callcontrol")
+except:
+  datapath = os.path.expandvars(r"%APPDATA%\callcontrol")
 
 asterisk_conf = json.load(open(os.path.join(datapath, ASTERCONF)))
 

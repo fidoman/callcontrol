@@ -119,7 +119,10 @@ pause_button.grid(row=1, column=5)
 #quit_button.grid(row=2, column=3)
 
 root.wm_attributes('-topmost', 1)
-root.wm_attributes('-toolwindow', 1)
+try:
+  root.wm_attributes('-toolwindow', 1)
+except:
+  pass
 root.protocol("WM_DELETE_WINDOW", lambda: None)
 root.bind("<Control-Shift-Q>", root_quit)
 root.bind("<Control-Shift-T>", lambda _: add_call_window("123", "45", "x", "chan"))
