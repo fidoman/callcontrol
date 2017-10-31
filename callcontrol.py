@@ -232,6 +232,11 @@ def add_call_window(shop_info, operator, channel, uid):
   cw = Toplevel()
   cw.wm_attributes('-topmost', 1)
 
+  x, y = calculate_position(len(call_windows))
+  call_windows.append(cw)
+  print("Positioning at:", x, y)
+  cw.geometry('%dx%d+%d+%d'%(window_w, window_h, x, y))
+
   cw.direction = None
   cw.uid = uid
   cw.shop_info = shop_info
@@ -316,9 +321,8 @@ def add_call_window(shop_info, operator, channel, uid):
 
   hframe.grid(row=7, column=0, columnspan=4, sticky=W+E)
 
-  x, y = calculate_position(len(call_windows))
+  print("Positioning retry at:", x, y)
   cw.geometry('%dx%d+%d+%d'%(window_w, window_h, x, y))
-  call_windows.append(cw)
 
   return cw
  except:
@@ -717,7 +721,7 @@ def event_listener(event,**kwargs):
         #print("update status to", cstatedesc)
         cw.statusvar.set(cstatedesc)
       else:
-        print("nope")
+        print("newstate - no cw", cstatedesc)
 
 
       if cstate=='6': # ANSWER
