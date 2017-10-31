@@ -168,7 +168,7 @@ exten => %(prov_ext)s,n,Set(CALLERID(num)=+${CALLERID(num)})
 exten => %(prov_ext)s,n,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN},m)
 exten => %(prov_ext)s,n,Set(CDR(recordingfile)=callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN})
 exten => %(prov_ext)s,n,Set(CALLERID(name)=%(destiname)s)
-;exten => %(prov_ext)s,n,Set(CHANNEL(hangup_handler_push)=inbound-hangup,s,1(${CALLERID(num)},${EXTEN}))
+exten => %(prov_ext)s,n,Set(CHANNEL(hangup_handler_push)=inbound-hangup,s,1(${CALLERID(num)},${EXTEN},${HANGUPCAUSE},${UNIQUEID}))
 %(dial)s
 exten => %(prov_ext)s,n,Voicemail(%(prov_ext)s@missed)
 ;exten => %(prov_ext)s,n,Set(CHANNEL(hangup_handler_pop)=)

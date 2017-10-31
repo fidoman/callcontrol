@@ -442,10 +442,11 @@ try:
   elif what == "phone_history":
     """ get records for given phone order by date"""
     out = {}
-    out["phone"] = form.getvalue("phone")
+    phone = out["phone"] = form.getvalue("phone")
+    shop = out["shop"] = form.getvalue("shop")
     out["list"] = []
     r = None
-    for r in db.prepare("select call_log.*, tag_name from call_log, tags where cl_client_phone=$1 and cl_tag=tag_id order by cl_close_time desc")(out["phone"]):
+    for r in db.prepare("select call_log.*, tag_name from call_log, tags where cl_client_phone=$1 and cl_shop_name=$2 and cl_tag=tag_id order by cl_close_time desc")(phone, shop):
 #      r1 = [str(x) for x in r.values()]
       r1 = [str(x) if type(x)==datetime else x for x in r]
       out["list"].append(r1)

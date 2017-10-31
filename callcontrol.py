@@ -161,21 +161,21 @@ def hangup(channel):
 
 
 
-def get_history(ph, shop):
-    hist_data = backend_query('phone_history', {"phone": ph, "shop": shop})
+def get_history(ph, shopphone, shopname):
+    hist_data = backend_query('phone_history', {"phone": ph, "shop": shopname})
     if not hist_data:
-      return
+      return [], {}, {}
     if "keymap" in hist_data:
           hist_list = []
           hist_full = {}
 
           km=hist_data["keymap"]
-          print(km)
           for x in hist_data["list"]:
             tm = x[km["cl_ring_time"]]
             if tm: 
               tm = datetime.strptime(tm[:-6], "%Y-%m-%d %H:%M:%S.%f").replace(tzinfo=timezone.utc).astimezone(tz=None).strftime("%Y-%m-%d %H:%M:%S")
-            rec= " ".join((x[km["cl_shop_name"]] or '-', x[km["cl_operator_name"]] or '?', x[km["tag_name"]] or 'no tag', tm or 'unknown'))
+#            rec= " ".join((x[km["cl_shop_name"]] or '-', x[km["cl_operator_name"]] or '?', x[km["tag_name"]] or 'no tag', tm or 'unknown'))
+            rec= " ".join((tm or 'unknown', x[km["cl_direction"]] or "-", x[km["cl_operator_name"]] or '-', x[km["tag_name"]] or 'no tag'))
             hist_list.append(rec)
             hist_full[rec] = x
           return hist_list, km, hist_full
@@ -211,11 +211,17 @@ def set_call_window_callerid(cw, callerid):
   cw.title("%s->%s [%s] %s"%(cw.callerid, cw.shop_info[0], cw.operator, cw.channel))
   cw.client.set(callerid)
   cw.history.delete(0, END)
-  hist_list, km, hist_full = get_history(callerid, cw.shopphone)
-  for history_record in hist_list:
-    cw.history.insert(END, history_record)
-  cw.history_data = hist_full
-  cw.history_keys = km
+  hist = get_history(callerid, cw.shopphone, cw.shopname.get())
+  if hist is None:
+    cw.history.insert(END, '<nothing here>')
+    cw.history_data = {}
+    cw.history_keys = {}
+  else:
+    hist_list, km, hist_full = hist
+    for history_record in hist_list:
+      cw.history.insert(END, history_record)
+    cw.history_data = hist_full
+    cw.history_keys = km
 
 
 def add_call_window(shop_info, operator, channel, uid):
@@ -269,10 +275,10 @@ def add_call_window(shop_info, operator, channel, uid):
   k = Entry(cw, textvariable=cw.order, width=10)
   k.grid(row=1, column=3)
 
-  k = Button(cw, text='Создать', command=lambda: call_window_new_order(cw))
-  k.grid(row=2, column=2)
-  k = Button(cw, text='Обновить', command=lambda: call_window_refresh_orders(cw))
-  k.grid(row=2, column=3)
+#  k = Button(cw, text='Создать', command=lambda: call_window_new_order(cw))
+#  k.grid(row=2, column=2)
+#  k = Button(cw, text='Обновить', command=lambda: call_window_refresh_orders(cw))
+#  k.grid(row=2, column=3)
 
   cw.shopname = StringVar(value=shop_info[0])
 
