@@ -217,5 +217,7 @@ oc_shop_phone varchar,
 oc_client_phone varchar,
 oc_after_call varchar,
 oc_order varchar,
-oc_when timestamp with time zone
+oc_when timestamp with time zone,
+oc_lock_time timestamp with time zone,
+oc_lock_by varchar references operators(op_ext)
 );

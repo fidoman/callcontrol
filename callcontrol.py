@@ -18,6 +18,8 @@ call_log = Queue(call_log_dir)
 
 import browserwindow
 
+import scheduler
+
 ########
 def text_status(s):
 # https://wiki.asterisk.org/wiki/display/AST/Asterisk+13+ManagerEvent_ExtensionStatus
@@ -935,6 +937,11 @@ def init_help_window():
 bg2 = threading.Thread(target=init_help_window)
 bg2.start()
 
+scheduler.root = root
+
+bg_sched = threading.Thread(target=scheduler.run_scheduler)
+bg_sched.start()
+
 
 #root.wm_withdraw()
 root.mainloop()
@@ -942,9 +949,13 @@ root.mainloop()
 
 #root.destroy()
 bg_run = False
+scheduler.bg_run = False
 root.quit()
 
 keeper.finished.set()
 browserwindow.close_help()
 
+print("waiting threads...")
 bgthread.join()
+bg2.join()
+bg_sched.join()
