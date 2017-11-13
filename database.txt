@@ -79,6 +79,7 @@ grant select on sip_users to cc_populate ;
 create table shops (
 shop_id serial primary key,
 shop_name varchar,
+shop_eid integer,
 shop_phone varchar,
 shop_script varchar,
 shop_manager varchar,
