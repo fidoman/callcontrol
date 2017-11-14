@@ -253,7 +253,7 @@ if True:
     print(name, ext, group, location)
     if not location: continue
     op_names[ext] = name.split(" ")[0]
-    ops.setdefault(group, ((1, int(group)), {}))[1][ext] = tuple(location.split(" "))
+    ops.setdefault(group, ((1, int(group or '0')), {}))[1][ext] = tuple(location.split(" "))
 
 #  pprint(ops); exit()
 if __name__ == "__main__":

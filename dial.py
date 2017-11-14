@@ -38,8 +38,8 @@ def normalize_phone(ph):
 
 
 def filter_shops(filter_str, shop_frames):
-  for fr, name, row in shop_frames:
-    if name.lower().find(filter_str.lower())!=-1:
+  for fr, name, row, ph in shop_frames:
+    if name.lower().find(filter_str.lower())!=-1 or ph.find(filter_str)!=-1:
       fr.grid(row=row)
     else:
       fr.grid_forget()
@@ -92,6 +92,9 @@ def dial(root):
 
   row=1
   for s in shops:
+    #print(s[0], s[4])
+    if s[4]!="Да":
+      continue
     fr = Frame(shops_frame)
     shop_label = Label(fr, text=s[0], width=36)
     shop_label.pack(side=LEFT, fill=X, expand=True)
@@ -99,7 +102,7 @@ def dial(root):
     shop_phone = Button(fr, text=ph, width=15, command=lambda s=s[0], ph=ph: order_window(s, ph))
     shop_phone.pack(side=LEFT)
     fr.grid(column=0, row=row, sticky=W)
-    shop_frames.append((fr, s[0], row))
+    shop_frames.append((fr, s[0], row, ph))
     row+=1
 
   srch_entry.focus()
