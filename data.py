@@ -84,9 +84,9 @@ try:
 
   if what == "shops":
     out=[]
-    for n, ph, scr, ext in db.prepare("select shop_name, shop_phone, shop_script, myext from shops, sip_ext"
+    for n, ph, scr, ext, active, eid in db.prepare("select shop_name, shop_phone, shop_script, myext, shop_active, shop_eid from shops, sip_ext"
         " where phone=shop_phone")():
-      out.append((n, ph, scr, ext))
+      out.append((n, ph, scr, ext, active, eid))
 
   elif what == "tags":
     out=[]

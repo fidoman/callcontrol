@@ -161,11 +161,11 @@ def update_data_in_table(db, table, column_prefix, master_field, data_fields, da
         print("skip", repr(d))
         continue
 
-      if d_master.lower() in masters:
+      if d_master in masters:
         print("duplicate", d_master)
         continue
 
-      masters.add(d_master.lower())
+      masters.add(d_master)
 
       d_fields = [d[data_field_pos[x]] for x in data_fields]
 
@@ -186,9 +186,9 @@ def update_data_in_table(db, table, column_prefix, master_field, data_fields, da
           q_upd(d_master, *d_fields)
 
     for (m,) in q_masters():
-      if not m: continue
-      print(m, m.lower() in masters)
-      if m.lower() not in masters:
+      if m is None: continue
+      if m not in masters:
+        print("delete", m)
         db.prepare("delete from "+table+" where "+master_column+"=$1")(m)
 
 if __name__ == '__main__':
@@ -208,6 +208,6 @@ if __name__ == '__main__':
     update_data_in_table(db, "operators", "op_", "ext", ["name", "group", "location"], managers_cols, managers_data)
 
     update_data_in_table(db, "shops", "shop_",
-                "name", ['phone', 'script', 'level', 'manager', 'manager2', 'active', 'queue2', 'queue3'],
+                "name", ['eid', 'phone', 'script', 'level', 'manager', 'manager2', 'active', 'queue2', 'queue3'],
                 shops_cols, shops_data)
 
