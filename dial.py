@@ -99,7 +99,7 @@ def dial(root):
     shop_label = Label(fr, text=s[0], width=36)
     shop_label.pack(side=LEFT, fill=X, expand=True)
     ph = normalize_phone(s[1]) or 'Общий'
-    shop_phone = Button(fr, text=ph, width=15, command=lambda s=s[0], ph=ph: order_window(s, ph))
+    shop_phone = Button(fr, text=ph, width=15, command=lambda s=s[0], ph=ph, eid=s[5]: order_window(s, ph, eid))
     shop_phone.pack(side=LEFT)
     fr.grid(column=0, row=row, sticky=W)
     shop_frames.append((fr, s[0], row, ph))
