@@ -31,8 +31,9 @@ def fix_rus(event):
     event.widget.event_generate("<<Paste>>")
     print("ok")
 
-def order_window(shop, shop_ph):
+def order_window(shop, shop_ph, eid):
   global asterisk_conf
+  print("dial window", shop, shop_ph, eid)
   ow = Toplevel()
   s = Label(ow, text=shop)
   s.pack()
