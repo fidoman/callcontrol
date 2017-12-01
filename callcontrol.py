@@ -13,7 +13,7 @@ import urllib.request
 import re
 
 import gettext
-gettext.install('callcontrol')
+print(gettext.install('callcontrol', 'i18n'))
 
 from statuswindow import status_window_operation
 
@@ -113,9 +113,9 @@ ext_entry = Entry(root, textvariable=my_extension, width=8, state="readonly")
 ext_entry.grid(row=1, column=2)
 ext_status = Entry(root, textvariable=extstats[my_extension.get()], width=12, state="readonly")
 ext_status.grid(row=1, column=3)
-call_button = Button(root, text="Dial", command = do_dial)
+call_button = Button(root, text=_("Dial"), command = do_dial)
 call_button.grid(row=1, column=4)
-pause_button = Button(root, text="Pause", command = pause_queue_member)
+pause_button = Button(root, text=_("Pause"), command = pause_queue_member)
 pause_button.grid(row=1, column=5)
 
 #add_window_button = Button(root, text="Тест", command = lambda: add_call_window("123", "45", "x", "chan"))
@@ -222,7 +222,7 @@ def set_call_window_callerid(cw, callerid):
   cw.history.delete(0, END)
   hist = get_history(callerid, cw.shopphone, cw.shopname.get())
   if hist is None:
-    cw.history.insert(END, '<nothing here>')
+    cw.history.insert(END, _('<nothing here>'))
     cw.history_data = {}
     cw.history_keys = {}
   else:
@@ -263,28 +263,28 @@ def add_call_window(shop_info, operator, channel, uid):
   cw.sticky = False # cannot close without tag
   cw.rec_uid = None # voice record
 
-  sv_label = Label(cw, text="Состояние")
+  sv_label = Label(cw, text=_("line state"))
   cw.statusvar = StringVar()
   sv_data = Label(cw, textvariable = cw.statusvar)
   sv_label.grid(row=0,column=0)
   sv_data.grid(row=0,column=1)
 
-  transf_b = Button(cw, text='Сброс', command=lambda ch=channel: hangup(ch))
+  transf_b = Button(cw, text=_('hangup'), command=lambda ch=channel: hangup(ch))
   transf_b.grid(row=0,column=2)
 
-  transf_b = Button(cw, text='Переключить', command=lambda ch=channel: transfer_window(ch))
+  transf_b = Button(cw, text=_('transfer'), command=lambda ch=channel: transfer_window(ch))
   transf_b.grid(row=0,column=3)
 
   cw.client = StringVar(value='')
 
-  k = Label(cw, text='Клиент:')
+  k = Label(cw, text=_('client:'))
   k.grid(row=1, column=0)
   k = Entry(cw, textvariable=cw.client, width=16)
   k.grid(row=1, column=1)
 
   cw.order = StringVar()
 
-  k = Label(cw, text='Заказ:')
+  k = Label(cw, text=_('order no:'))
   k.grid(row=1, column=2)
   k = Entry(cw, textvariable=cw.order, width=10)
   k.grid(row=1, column=3)
@@ -296,25 +296,25 @@ def add_call_window(shop_info, operator, channel, uid):
 
   cw.shopname = StringVar(value=shop_info[0])
 
-  k = Label(cw, text='Магазин:')
+  k = Label(cw, text=_('shop:'))
   k.grid(row=2, column=0)
   k = Label(cw, textvariable=cw.shopname)
   k.grid(row=2, column=1)
 
   cw.tag = StringVar()
 
-  k = Label(cw, text="Тэг")
+  k = Label(cw, text=_("tag"))
   k.grid(row=4,column=0)
   k = OptionMenu(cw, cw.tag, *call_tags)
   k.grid(row=4,column=1, columnspan=3, sticky=W)
 
 
-  k = Label(cw, text="Комментарий")
+  k = Label(cw, text=_("remark"))
   k.grid(row=5,column=0)
   cw.note = Text(cw, height=3, width=24)
   cw.note.grid(row=5,column=1, columnspan=3)
 
-  close_btn = Button(cw, text="Завершено", command = lambda: close_call_window(cw))
+  close_btn = Button(cw, text=_("finished"), command = lambda: close_call_window(cw))
   close_btn.grid(row=6,column=0)
   cw.protocol("WM_DELETE_WINDOW", lambda: close_call_window(cw))
 
