@@ -1,3 +1,6 @@
+# Written by Sergey Dorofeev <sergey@fidoman.ru> for Fastery
+# Year 2017
+
 from tkinter import *
 import time
 import threading
@@ -8,6 +11,9 @@ from datetime import datetime, timezone, timedelta
 import urllib.parse
 import urllib.request
 import re
+
+import gettext
+gettext.install('callcontrol')
 
 from statuswindow import status_window_operation
 
@@ -81,9 +87,10 @@ import dial
 def do_dial():
   dial.dial(root)
 
-def pause_queue_member():
+def pause_queue_member(new_state=None):
   global pause_button, is_paused, asterisk_conf
-  new_state = not is_paused
+  if new_state is None:
+    new_state = not is_paused
   action = SimpleAction(
     'QueuePause',
     Interface = 'SIP/'+asterisk_conf["ext"],
@@ -92,7 +99,7 @@ def pause_queue_member():
   )
   client.send_action(action, callback=print)
   is_paused = new_state
-  pause_button.config(text="Unpause" if is_paused else "Pause")
+  pause_button.config(text=_("Unpause") if is_paused else _("Pause"))
 
 
 root.title("Call Control")
@@ -100,7 +107,7 @@ my_extension = StringVar()
 my_extension.set(asterisk_conf["ext"])
 extstats[my_extension.get()] = StringVar()
 
-ext_label = Label(root, text="Внутренний номер:")
+ext_label = Label(root, text=_("Extension:"))
 ext_label.grid(row=1, column=1)
 ext_entry = Entry(root, textvariable=my_extension, width=8, state="readonly")
 ext_entry.grid(row=1, column=2)
@@ -944,6 +951,9 @@ bg_sched.start()
 
 
 #root.wm_withdraw()
+
+#threading.Thread(target=lambda: pause_queue_member(True)).start() # start paused
+pause_queue_member(True)
 root.mainloop()
 #time.sleep(10)
 
@@ -957,5 +967,5 @@ browserwindow.close_help()
 
 print("waiting threads...")
 bgthread.join()
-bg2.join()
+#bg2.join() - can hang
 bg_sched.join()
