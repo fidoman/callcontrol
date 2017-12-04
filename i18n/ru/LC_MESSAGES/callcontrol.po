@@ -70,3 +70,53 @@ msgstr "Комментарий"
 msgid "finished"
 msgstr "Завершено"
 
+msgid "cl_id"
+msgstr "id записи"
+
+msgid "cl_tag"
+msgstr "тэг"
+
+msgid "cl_operator"
+msgstr "номер опратора"
+
+msgid "cl_operator_name"
+msgstr "оператор"
+
+msgid "cl_rec_uid"
+msgstr "uid записи"
+
+msgid "cl_client_phone"
+msgstr "телефон клиента"
+
+msgid "cl_shop_phone"
+msgstr "телефон магазина"
+
+msgid "cl_shop_name"
+msgstr "название магазина"
+
+msgid "cl_ring_time"
+msgstr "время звонка"
+
+msgid "cl_answer_time"
+msgstr "время ответа"
+
+msgid "cl_end_time"
+msgstr "время завершения"
+
+msgid "cl_close_time"
+msgstr "время проставки тэга"
+
+msgid "cl_note"
+msgstr "заметка"
+
+msgid "cl_order"
+msgstr "номер заказа"
+
+msgid "cl_uid"
+msgstr "uid вызова"
+
+msgid "cl_direction"
+msgstr "направление"
+
+msgid "cl_eid"
+msgstr "id магазина в ЛК"

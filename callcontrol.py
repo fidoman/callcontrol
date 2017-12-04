@@ -203,7 +203,7 @@ def show_history_details(evt, w):
     if x<0: x=0
     y-=400
     if y<0: y=0
-    detw.geometry("390x350+"+x+"+"+y)
+    detw.geometry("390x350+%d+%d"%(x,y))
     w.history_details_window = detw
     t = Text(detw)
     t.pack(fill=BOTH)
@@ -213,7 +213,7 @@ def show_history_details(evt, w):
       print(w.history_data[w.history.get(i)])
       for k, n in w.history_keys.items():
         print(k, w.history_data[w.history.get(i)][n])
-        t.insert(END, k+": "+w.history_data[w.history.get(i)][n]+"\n")
+        t.insert(END, _(k)+": "+str(w.history_data[w.history.get(i)][n])+"\n")
 
 def set_call_window_callerid(cw, callerid):
   cw.callerid = callerid
