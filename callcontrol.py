@@ -146,7 +146,7 @@ def calculate_position(window_number): # from zero
   max_windows_vertically = int((screen_h-margin_v)/(window_h+space_v))
   wincolumn_number = int(window_number/max_windows_vertically)
   window_number%=max_windows_vertically
-  print("window #", window_number,"of", max_windows_vertically)
+  print("window #", window_number, "of", max_windows_vertically)
   downside = screen_h-space_v-window_number*(window_h+space_v)-margin_v
   rightside = screen_w-space_h-margin_h-wincolumn_number*(window_w+space_h)
   return rightside-window_w, downside-window_h
@@ -607,13 +607,13 @@ def event_listener(event,**kwargs):
           shop_sipout_ext = None
           external = None
 
-        print("External "+external+" on "+channel_of_interest+" internal "+int_ext+" shop "+shop_sipout_ext+"; "+callerchan+"-->"+calledchan+"")
+        print("External "+str(external)+" on "+str(channel_of_interest)+" internal "+str(int_ext)+" shop "+str(shop_sipout_ext)+"; "+str(callerchan)+"-->"+str(calledchan)+"")
 
         lbr = calls[callerchan].get("localbridge")
         lbrcalleduid = None
         if lbr:
           lbrcalleduid=calls[lbr].get("calleduid")
-          print("call to "+dial+" local bridge to "+lbr+"/"+lbrcalleduid+"")
+          print("call to "+str(dial)+" local bridge to "+str(lbr)+"/"+str(lbrcalleduid)+"")
 #          lbrcallee = calls.get(lbrcalleduid)
 #          print("  callee:", callee)
 #          if callee: 
@@ -650,7 +650,7 @@ def event_listener(event,**kwargs):
 #          else:
             print("Dial: create call window on channel uid", channel_of_interest)
             if "window" in calls[channel_of_interest]:
-              print("window exists, rewriting phone: "+external+" new uid "+callerchan+"")
+              print("window exists, rewriting phone: "+str(external)+" new uid "+str(callerchan)+"")
               cw = calls[channel_of_interest]["window"]
               set_call_window_callerid(cw, unsip(external))
               cw.uid = cw.uid or callerchan 
@@ -659,7 +659,7 @@ def event_listener(event,**kwargs):
               cw = add_call_window(shop_info, int_ext, channel_of_interest, callerchan) #lbrcalleduid or callerchan) it is easy on asterisk 13
               cw.direction = direction
               set_call_window_callerid(cw, unsip(external))
-              print("new window "+cw.direction+" uid "+cw.uid+" phone "+unsip(external)+"")
+              print("new window "+str(cw.direction)+" uid "+str(cw.uid)+" phone "+str(unsip(external))+"")
               calls[channel_of_interest]["window"] = cw
               cw.statusvar.set(calls[channel_of_interest]["statedesc"])
 
@@ -704,7 +704,7 @@ def event_listener(event,**kwargs):
           sip_ext_m = SIPchan.match(chan)
           if sip_ext_m:
             sip_ext = sip_ext_m.group(1)
-            print("Extension="+sip_ext+" caller_name="+cname+"")
+            print("Extension="+str(sip_ext)+" caller_name="+str(cname)+"")
 #            if cname:
 #              print("need call window")
 #              if "window" in chaninfo:
@@ -772,15 +772,15 @@ def event_listener(event,**kwargs):
         uid = event.keys["Uniqueid"]
         c=calls.get(uid)
         c["monitored"] = True
-        print("Recording start on channel "+uid+"")
+        print("Recording start on channel "+str(uid)+"")
         sw = c.get("window")
         if sw:
-          print("rec_uid="+uid+" same as window")
+          print("rec_uid="+str(uid)+" same as window")
           sw.rec_uid = uid
 
     elif event.name=="MonitorStop":
         uid = event.keys["Uniqueid"]
-        print("Recording stop on channel "+uid+"")
+        print("Recording stop on channel "+str(uid)+"")
         c=calls.get(uid)
         if c:
           c["monitored"] = False
@@ -821,7 +821,7 @@ def event_listener(event,**kwargs):
       if changes and "window" in bridges[buid][0] and "rec_uid" in bridges[buid][0]:
         w_chan = bridges[buid][0]["window"]
         rec_uid = bridges[buid][0]["rec_uid"]
-        print("setting rec_uid for window on channel "+w_chan+" to "+rec_uid+"")
+        print("setting rec_uid for window on channel "+str(w_chan)+" to "+str(rec_uid)+"")
         calls[w_chan]["window"].rec_uid = rec_uid
         del w_chan, rec_uid
 
@@ -840,11 +840,11 @@ def event_listener(event,**kwargs):
 
       if calls.get(uid1, {}).get("monitored") and calls.get(uid2, {}).get("window"):
         calls[uid2]["window"].rec_uid = uid1
-        print("windows on "+uid2+" has monitor on "+uid1+"")
+        print("windows on "+str(uid2)+" has monitor on "+str(uid1)+"")
 
       if calls.get(uid2, {}).get("monitored") and calls.get(uid1, {}).get("window"):
         calls[uid1]["window"].rec_uid = uid2
-        print("windows on "+uid1+" has monitor on "+uid2+"")
+        print("windows on "+str(uid1)+" has monitor on "+str(uid2)+"")
       # may be we need lists here?
 
       if calls.get(uid2, {}).get("window"):
