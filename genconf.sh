@@ -1,5 +1,6 @@
 #!/bin/sh
 
+cd /root/callcontrol
 python3 gdocsfetch.py
 
 python3 database.py inbound > /etc/asterisk/extensions-inbound.conf

@@ -242,7 +242,7 @@ try:
 
     out = []
     for (shop_name, operator_name, direction, client_phone, close_time, 
-         rand, tag, answer_time, order) in db.prepare("select cl_shop_name, cl_operator_name, cl_direction, cl_client_phone, cl_close_time, cl_rand, tag_name, cl_answer_time, cl_order from call_log, tags where tag_id=cl_tag order by cl_close_time"):
+         rand, tag, answer_time, order) in db.prepare("select cl_shop_name, cl_operator_name, cl_direction, cl_client_phone, cl_close_time, cl_rand, tag_name, cl_answer_time, cl_order from call_log, tags where tag_id=cl_tag order by cl_close_time desc"):
       if rand:
         params_att = urllib.parse.urlencode({"what": "get_rec", "disposition": "attachment", "code": rand.strip()})
         params_inl = urllib.parse.urlencode({"what": "get_rec", "disposition": "inline", "code": rand.strip()})
