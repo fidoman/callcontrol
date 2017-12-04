@@ -13,7 +13,7 @@ import urllib.request
 import re
 
 import gettext
-print(gettext.install('callcontrol', 'i18n'))
+gettext.install('callcontrol')
 
 from statuswindow import status_window_operation
 
