@@ -1,0 +1,122 @@
+# callcontrol - russian
+# Copyright (C) fidoman.ru
+# Sergey Dorofeev <sergey@fidoman.ru>, 2017.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2017-12-01 23:20+0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=cp1251\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: callcontrol.py:99
+msgid "Pause"
+msgstr "Отключить входящие"
+
+#: callcontrol.py:99
+msgid "Unpause"
+msgstr "Разрешить входящие"
+
+#: callcontrol.py:107
+msgid "Extension:"
+msgstr "Внутренний номер"
+
+#: callcontrol.py:116
+msgid "Dial"
+msgstr "Звонок"
+
+msgid "<nothing here>"
+msgstr "<нет записей>"
+
+#: callcontrol.py:266
+msgid "line state"
+msgstr "Состояние"
+
+#: callcontrol.py:272
+msgid "hangup"
+msgstr "Отбой"
+
+#: callcontrol.py:275
+msgid "transfer"
+msgstr "Перевод"
+
+#: callcontrol.py:280
+msgid "client:"
+msgstr "Клиент:"
+
+#: callcontrol.py:287
+msgid "order no:"
+msgstr "Заказ:"
+
+#: callcontrol.py:299
+msgid "shop:"
+msgstr "Магазин:"
+
+#: callcontrol.py:306
+msgid "tag"
+msgstr "Тэг"
+
+#: callcontrol.py:312
+msgid "remark"
+msgstr "Комментарий"
+
+#: callcontrol.py:317
+msgid "finished"
+msgstr "Завершено"
+
+msgid "cl_id"
+msgstr "id записи"
+
+msgid "cl_tag"
+msgstr "тэг"
+
+msgid "cl_operator"
+msgstr "номер опратора"
+
+msgid "cl_operator_name"
+msgstr "оператор"
+
+msgid "cl_rec_uid"
+msgstr "uid записи"
+
+msgid "cl_client_phone"
+msgstr "телефон клиента"
+
+msgid "cl_shop_phone"
+msgstr "телефон магазина"
+
+msgid "cl_shop_name"
+msgstr "название магазина"
+
+msgid "cl_ring_time"
+msgstr "время звонка"
+
+msgid "cl_answer_time"
+msgstr "время ответа"
+
+msgid "cl_end_time"
+msgstr "время завершения"
+
+msgid "cl_close_time"
+msgstr "время проставки тэга"
+
+msgid "cl_note"
+msgstr "заметка"
+
+msgid "cl_order"
+msgstr "номер заказа"
+
+msgid "cl_uid"
+msgstr "uid вызова"
+
+msgid "cl_direction"
+msgstr "направление"
+
+msgid "cl_eid"
+msgstr "id магазина в ЛК"

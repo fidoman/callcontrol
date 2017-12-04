@@ -21,7 +21,7 @@ def get_operators():
         print("error:", repr(resp.read(1000)))
         raise Exception("server did not return JSON data")
       else:
-        data = json.load(resp)
+        data = json.loads(resp.read().decode("UTF-8"))
         if "keymap" in data:
           km=data["keymap"]
 #          print(km)
@@ -253,7 +253,7 @@ if True:
     print(name, ext, group, location)
     if not location: continue
     op_names[ext] = name.split(" ")[0]
-    ops.setdefault(group, ((1, int(group)), {}))[1][ext] = tuple(location.split(" "))
+    ops.setdefault(group, ((1, int(group or '0')), {}))[1][ext] = tuple(location.split(" "))
 
 #  pprint(ops); exit()
 if __name__ == "__main__":

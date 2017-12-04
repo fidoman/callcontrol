@@ -22,11 +22,11 @@ def save():
     root.bell()
     return
 
-  q_url=f"https://{str_srv}/cgi-bin/data.py"
+  q_url="https://"+str_srv+"/cgi-bin/data.py"
 
   # urlencode ext and pw
   urlparams = urllib.parse.urlencode({'what': 'config', 'ext': str_ext, 'pw': str_pw})
-  resp = urllib.request.urlopen(f"{q_url}?{urlparams}")
+  resp = urllib.request.urlopen(""+q_url+"?"+urlparams+"")
   if resp.headers.get_content_type() != 'application/json':
     print("error:", repr(resp.read(1000)))
     root.bell()

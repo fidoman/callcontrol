@@ -1,3 +1,6 @@
+# Written by Sergey Dorofeev <sergey@fidoman.ru> for Fastery
+# Year 2017
+
 from tkinter import *
 import time
 import threading
@@ -9,6 +12,9 @@ import urllib.parse
 import urllib.request
 import re
 
+import gettext
+gettext.install('callcontrol')
+
 from statuswindow import status_window_operation
 
 from config import asterisk_conf, call_log_dir, load_data, backend_query
@@ -17,6 +23,8 @@ from persistqueue import Queue
 call_log = Queue(call_log_dir)
 
 import browserwindow
+
+import scheduler
 
 ########
 def text_status(s):
@@ -79,9 +87,10 @@ import dial
 def do_dial():
   dial.dial(root)
 
-def pause_queue_member():
+def pause_queue_member(new_state=None):
   global pause_button, is_paused, asterisk_conf
-  new_state = not is_paused
+  if new_state is None:
+    new_state = not is_paused
   action = SimpleAction(
     'QueuePause',
     Interface = 'SIP/'+asterisk_conf["ext"],
@@ -90,7 +99,7 @@ def pause_queue_member():
   )
   client.send_action(action, callback=print)
   is_paused = new_state
-  pause_button.config(text="Unpause" if is_paused else "Pause")
+  pause_button.config(text=_("Unpause") if is_paused else _("Pause"))
 
 
 root.title("Call Control")
@@ -98,15 +107,15 @@ my_extension = StringVar()
 my_extension.set(asterisk_conf["ext"])
 extstats[my_extension.get()] = StringVar()
 
-ext_label = Label(root, text="Внутренний номер:")
+ext_label = Label(root, text=_("Extension:"))
 ext_label.grid(row=1, column=1)
 ext_entry = Entry(root, textvariable=my_extension, width=8, state="readonly")
 ext_entry.grid(row=1, column=2)
 ext_status = Entry(root, textvariable=extstats[my_extension.get()], width=12, state="readonly")
 ext_status.grid(row=1, column=3)
-call_button = Button(root, text="Dial", command = do_dial)
+call_button = Button(root, text=_("Dial"), command = do_dial)
 call_button.grid(row=1, column=4)
-pause_button = Button(root, text="Pause", command = pause_queue_member)
+pause_button = Button(root, text=_("Pause"), command = pause_queue_member)
 pause_button.grid(row=1, column=5)
 
 #add_window_button = Button(root, text="Тест", command = lambda: add_call_window("123", "45", "x", "chan"))
@@ -137,7 +146,7 @@ def calculate_position(window_number): # from zero
   max_windows_vertically = int((screen_h-margin_v)/(window_h+space_v))
   wincolumn_number = int(window_number/max_windows_vertically)
   window_number%=max_windows_vertically
-  print("window #", window_number,"of", max_windows_vertically)
+  print("window #", window_number, "of", max_windows_vertically)
   downside = screen_h-space_v-window_number*(window_h+space_v)-margin_v
   rightside = screen_w-space_h-margin_h-wincolumn_number*(window_w+space_h)
   return rightside-window_w, downside-window_h
@@ -194,7 +203,7 @@ def show_history_details(evt, w):
     if x<0: x=0
     y-=400
     if y<0: y=0
-    detw.geometry(f"390x350+{x}+{y}")
+    detw.geometry("390x350+%d+%d"%(x,y))
     w.history_details_window = detw
     t = Text(detw)
     t.pack(fill=BOTH)
@@ -204,7 +213,7 @@ def show_history_details(evt, w):
       print(w.history_data[w.history.get(i)])
       for k, n in w.history_keys.items():
         print(k, w.history_data[w.history.get(i)][n])
-        t.insert(END, f"{k}: {w.history_data[w.history.get(i)][n]}\n")
+        t.insert(END, _(k)+": "+str(w.history_data[w.history.get(i)][n])+"\n")
 
 def set_call_window_callerid(cw, callerid):
   cw.callerid = callerid
@@ -213,7 +222,7 @@ def set_call_window_callerid(cw, callerid):
   cw.history.delete(0, END)
   hist = get_history(callerid, cw.shopphone, cw.shopname.get())
   if hist is None:
-    cw.history.insert(END, '<nothing here>')
+    cw.history.insert(END, _('<nothing here>'))
     cw.history_data = {}
     cw.history_keys = {}
   else:
@@ -254,28 +263,28 @@ def add_call_window(shop_info, operator, channel, uid):
   cw.sticky = False # cannot close without tag
   cw.rec_uid = None # voice record
 
-  sv_label = Label(cw, text="Состояние")
+  sv_label = Label(cw, text=_("line state"))
   cw.statusvar = StringVar()
   sv_data = Label(cw, textvariable = cw.statusvar)
   sv_label.grid(row=0,column=0)
   sv_data.grid(row=0,column=1)
 
-  transf_b = Button(cw, text='Сброс', command=lambda ch=channel: hangup(ch))
+  transf_b = Button(cw, text=_('hangup'), command=lambda ch=channel: hangup(ch))
   transf_b.grid(row=0,column=2)
 
-  transf_b = Button(cw, text='Переключить', command=lambda ch=channel: transfer_window(ch))
+  transf_b = Button(cw, text=_('transfer'), command=lambda ch=channel: transfer_window(ch))
   transf_b.grid(row=0,column=3)
 
   cw.client = StringVar(value='')
 
-  k = Label(cw, text='Клиент:')
+  k = Label(cw, text=_('client:'))
   k.grid(row=1, column=0)
   k = Entry(cw, textvariable=cw.client, width=16)
   k.grid(row=1, column=1)
 
   cw.order = StringVar()
 
-  k = Label(cw, text='Заказ:')
+  k = Label(cw, text=_('order no:'))
   k.grid(row=1, column=2)
   k = Entry(cw, textvariable=cw.order, width=10)
   k.grid(row=1, column=3)
@@ -287,25 +296,25 @@ def add_call_window(shop_info, operator, channel, uid):
 
   cw.shopname = StringVar(value=shop_info[0])
 
-  k = Label(cw, text='Магазин:')
+  k = Label(cw, text=_('shop:'))
   k.grid(row=2, column=0)
   k = Label(cw, textvariable=cw.shopname)
   k.grid(row=2, column=1)
 
   cw.tag = StringVar()
 
-  k = Label(cw, text="Тэг")
+  k = Label(cw, text=_("tag"))
   k.grid(row=4,column=0)
   k = OptionMenu(cw, cw.tag, *call_tags)
   k.grid(row=4,column=1, columnspan=3, sticky=W)
 
 
-  k = Label(cw, text="Комментарий")
+  k = Label(cw, text=_("remark"))
   k.grid(row=5,column=0)
   cw.note = Text(cw, height=3, width=24)
   cw.note.grid(row=5,column=1, columnspan=3)
 
-  close_btn = Button(cw, text="Завершено", command = lambda: close_call_window(cw))
+  close_btn = Button(cw, text=_("finished"), command = lambda: close_call_window(cw))
   close_btn.grid(row=6,column=0)
   cw.protocol("WM_DELETE_WINDOW", lambda: close_call_window(cw))
 
@@ -469,7 +478,7 @@ def bg_task():
           print("error:", repr(resp.read(1000)))
           raise Exception("server did not return JSON data")
         else:
-          r = json.load(resp)
+          r = json.loads(resp.read().decode("ascii"))
           print("result:", r)
           if r.get("status")!="added":
             raise Exception("record is not added on server")
@@ -561,7 +570,8 @@ def event_listener(event,**kwargs):
       chan = event.keys.get("Channel")
       dest = event.keys.get("Destination") or event.keys.get("DestChannel")
       subevt = event.keys.get("SubEvent")
-      print(f"\\ {subevt} {dial}: {chan} [{callerchan}] -> {dest} [{calledchan}]")
+#      print(f"\\ {subevt} {dial}: {chan} [{callerchan}] -> {dest} [{calledchan}]")
+      print("\\ "+str(subevt)+" "+str(dial)+": "+str(chan)+" ["+str(callerchan)+"] -> "+str(dest)+" ["+str(calledchan)+"]")
       print("caller:", calls.get(callerchan))
       print("callee:", calls.get(calledchan))
       if subevt=="Begin" or event.name=="DialBegin":
@@ -597,13 +607,13 @@ def event_listener(event,**kwargs):
           shop_sipout_ext = None
           external = None
 
-        print(f"External {external} on {channel_of_interest} internal {int_ext} shop {shop_sipout_ext}; {callerchan}-->{calledchan}")
+        print("External "+str(external)+" on "+str(channel_of_interest)+" internal "+str(int_ext)+" shop "+str(shop_sipout_ext)+"; "+str(callerchan)+"-->"+str(calledchan)+"")
 
         lbr = calls[callerchan].get("localbridge")
         lbrcalleduid = None
         if lbr:
           lbrcalleduid=calls[lbr].get("calleduid")
-          print(f"call to {dial} local bridge to {lbr}/{lbrcalleduid}")
+          print("call to "+str(dial)+" local bridge to "+str(lbr)+"/"+str(lbrcalleduid)+"")
 #          lbrcallee = calls.get(lbrcalleduid)
 #          print("  callee:", callee)
 #          if callee: 
@@ -640,7 +650,7 @@ def event_listener(event,**kwargs):
 #          else:
             print("Dial: create call window on channel uid", channel_of_interest)
             if "window" in calls[channel_of_interest]:
-              print(f"window exists, rewriting phone: {external} new uid {callerchan}")
+              print("window exists, rewriting phone: "+str(external)+" new uid "+str(callerchan)+"")
               cw = calls[channel_of_interest]["window"]
               set_call_window_callerid(cw, unsip(external))
               cw.uid = cw.uid or callerchan 
@@ -649,7 +659,7 @@ def event_listener(event,**kwargs):
               cw = add_call_window(shop_info, int_ext, channel_of_interest, callerchan) #lbrcalleduid or callerchan) it is easy on asterisk 13
               cw.direction = direction
               set_call_window_callerid(cw, unsip(external))
-              print(f"new window {cw.direction} uid {cw.uid} phone {unsip(external)}")
+              print("new window "+str(cw.direction)+" uid "+str(cw.uid)+" phone "+str(unsip(external))+"")
               calls[channel_of_interest]["window"] = cw
               cw.statusvar.set(calls[channel_of_interest]["statedesc"])
 
@@ -681,7 +691,7 @@ def event_listener(event,**kwargs):
       uid=event.keys.get("Uniqueid")
 
       chaninfo = calls.setdefault(uid, {})
-      print(f"\\ {uid} {chan} {chaninfo.get('state')} ({chaninfo.get('statedesc')}) -> {cstate} ({cstatedesc}) == {cnum} {cname}")
+      print("\\ "+str(uid)+" "+str(chan)+" "+str(chaninfo.get('state'))+" ("+str(chaninfo.get('statedesc'))+") -> "+str(cstate)+" ("+str(cstatedesc)+") == "+str(cnum)+" "+str(cname)+"")
       chaninfo["state"] = cstate
       chaninfo["statedesc"] = cstatedesc
 
@@ -694,13 +704,13 @@ def event_listener(event,**kwargs):
           sip_ext_m = SIPchan.match(chan)
           if sip_ext_m:
             sip_ext = sip_ext_m.group(1)
-            print(f"Extension={sip_ext} caller_name={cname}")
+            print("Extension="+str(sip_ext)+" caller_name="+str(cname)+"")
 #            if cname:
 #              print("need call window")
 #              if "window" in chaninfo:
 #                print("call window exists")
 #              else:
-#                print(f"Newstate: create call window on {uid} shop={cname}")
+#                print(f"Newstate: create call window on "+uid+" shop="+cname+"")
 #                shop_info = shops.by_name.get(cname, ["Нет данных x1", "скрипт", "x3"])
 #                cw = add_call_window(shop_info, sip_ext, uid, None)
 #                cw.direction = "incoming"
@@ -762,15 +772,15 @@ def event_listener(event,**kwargs):
         uid = event.keys["Uniqueid"]
         c=calls.get(uid)
         c["monitored"] = True
-        print(f"Recording start on channel {uid}")
+        print("Recording start on channel "+str(uid)+"")
         sw = c.get("window")
         if sw:
-          print(f"rec_uid={uid} same as window")
+          print("rec_uid="+str(uid)+" same as window")
           sw.rec_uid = uid
 
     elif event.name=="MonitorStop":
         uid = event.keys["Uniqueid"]
-        print(f"Recording stop on channel {uid}")
+        print("Recording stop on channel "+str(uid)+"")
         c=calls.get(uid)
         if c:
           c["monitored"] = False
@@ -811,7 +821,7 @@ def event_listener(event,**kwargs):
       if changes and "window" in bridges[buid][0] and "rec_uid" in bridges[buid][0]:
         w_chan = bridges[buid][0]["window"]
         rec_uid = bridges[buid][0]["rec_uid"]
-        print(f"setting rec_uid for window on channel {w_chan} to {rec_uid}")
+        print("setting rec_uid for window on channel "+str(w_chan)+" to "+str(rec_uid)+"")
         calls[w_chan]["window"].rec_uid = rec_uid
         del w_chan, rec_uid
 
@@ -826,15 +836,15 @@ def event_listener(event,**kwargs):
       uid1 = event.keys["Uniqueid1"]
       uid2 = event.keys["Uniqueid2"]
       bstate = event.keys["Bridgestate"]
-      print(f"\\  {bstate} {uid1}<->{uid2}")
+      print("\\  "+str(bstate)+" "+str(uid1)+"<->"+str(uid2)+"")
 
       if calls.get(uid1, {}).get("monitored") and calls.get(uid2, {}).get("window"):
         calls[uid2]["window"].rec_uid = uid1
-        print(f"windows on {uid2} has monitor on {uid1}")
+        print("windows on "+str(uid2)+" has monitor on "+str(uid1)+"")
 
       if calls.get(uid2, {}).get("monitored") and calls.get(uid1, {}).get("window"):
         calls[uid1]["window"].rec_uid = uid2
-        print(f"windows on {uid1} has monitor on {uid2}")
+        print("windows on "+str(uid1)+" has monitor on "+str(uid2)+"")
       # may be we need lists here?
 
       if calls.get(uid2, {}).get("window"):
@@ -935,16 +945,28 @@ def init_help_window():
 bg2 = threading.Thread(target=init_help_window)
 bg2.start()
 
+scheduler.root = root
+
+bg_sched = threading.Thread(target=scheduler.run_scheduler)
+bg_sched.start()
+
 
 #root.wm_withdraw()
+
+#threading.Thread(target=lambda: pause_queue_member(True)).start() # start paused
+pause_queue_member(True)
 root.mainloop()
 #time.sleep(10)
 
 #root.destroy()
 bg_run = False
+scheduler.bg_run = False
 root.quit()
 
 keeper.finished.set()
 browserwindow.close_help()
 
+print("waiting threads...")
 bgthread.join()
+#bg2.join() - can hang
+bg_sched.join()
