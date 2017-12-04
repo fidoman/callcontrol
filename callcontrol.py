@@ -203,7 +203,7 @@ def show_history_details(evt, w):
     if x<0: x=0
     y-=400
     if y<0: y=0
-    detw.geometry(f"390x350+{x}+{y}")
+    detw.geometry("390x350+"+x+"+"+y)
     w.history_details_window = detw
     t = Text(detw)
     t.pack(fill=BOTH)
@@ -213,7 +213,7 @@ def show_history_details(evt, w):
       print(w.history_data[w.history.get(i)])
       for k, n in w.history_keys.items():
         print(k, w.history_data[w.history.get(i)][n])
-        t.insert(END, f"{k}: {w.history_data[w.history.get(i)][n]}\n")
+        t.insert(END, k+": "+w.history_data[w.history.get(i)][n]+"\n")
 
 def set_call_window_callerid(cw, callerid):
   cw.callerid = callerid
@@ -570,7 +570,8 @@ def event_listener(event,**kwargs):
       chan = event.keys.get("Channel")
       dest = event.keys.get("Destination") or event.keys.get("DestChannel")
       subevt = event.keys.get("SubEvent")
-      print(f"\\ {subevt} {dial}: {chan} [{callerchan}] -> {dest} [{calledchan}]")
+#      print(f"\\ {subevt} {dial}: {chan} [{callerchan}] -> {dest} [{calledchan}]")
+      print("\\ "+subevt+" "+dial+": "+chan+" ["+callerchan+"] -> "+dest+" ["+calledchan+"]")
       print("caller:", calls.get(callerchan))
       print("callee:", calls.get(calledchan))
       if subevt=="Begin" or event.name=="DialBegin":
@@ -606,13 +607,13 @@ def event_listener(event,**kwargs):
           shop_sipout_ext = None
           external = None
 
-        print(f"External {external} on {channel_of_interest} internal {int_ext} shop {shop_sipout_ext}; {callerchan}-->{calledchan}")
+        print("External "+external+" on "+channel_of_interest+" internal "+int_ext+" shop "+shop_sipout_ext+"; "+callerchan+"-->"+calledchan+"")
 
         lbr = calls[callerchan].get("localbridge")
         lbrcalleduid = None
         if lbr:
           lbrcalleduid=calls[lbr].get("calleduid")
-          print(f"call to {dial} local bridge to {lbr}/{lbrcalleduid}")
+          print("call to "+dial+" local bridge to "+lbr+"/"+lbrcalleduid+"")
 #          lbrcallee = calls.get(lbrcalleduid)
 #          print("  callee:", callee)
 #          if callee: 
@@ -649,7 +650,7 @@ def event_listener(event,**kwargs):
 #          else:
             print("Dial: create call window on channel uid", channel_of_interest)
             if "window" in calls[channel_of_interest]:
-              print(f"window exists, rewriting phone: {external} new uid {callerchan}")
+              print("window exists, rewriting phone: "+external+" new uid "+callerchan+"")
               cw = calls[channel_of_interest]["window"]
               set_call_window_callerid(cw, unsip(external))
               cw.uid = cw.uid or callerchan 
@@ -658,7 +659,7 @@ def event_listener(event,**kwargs):
               cw = add_call_window(shop_info, int_ext, channel_of_interest, callerchan) #lbrcalleduid or callerchan) it is easy on asterisk 13
               cw.direction = direction
               set_call_window_callerid(cw, unsip(external))
-              print(f"new window {cw.direction} uid {cw.uid} phone {unsip(external)}")
+              print("new window "+cw.direction+" uid "+cw.uid+" phone "+unsip(external)+"")
               calls[channel_of_interest]["window"] = cw
               cw.statusvar.set(calls[channel_of_interest]["statedesc"])
 
@@ -690,7 +691,7 @@ def event_listener(event,**kwargs):
       uid=event.keys.get("Uniqueid")
 
       chaninfo = calls.setdefault(uid, {})
-      print(f"\\ {uid} {chan} {chaninfo.get('state')} ({chaninfo.get('statedesc')}) -> {cstate} ({cstatedesc}) == {cnum} {cname}")
+      print("\\ "+uid+" "+chan+" "+chaninfo.get('state')+" ("+chaninfo.get('statedesc')+") -> "+cstate+" ("+cstatedesc+") == "+cnum+" "+cname+"")
       chaninfo["state"] = cstate
       chaninfo["statedesc"] = cstatedesc
 
@@ -703,13 +704,13 @@ def event_listener(event,**kwargs):
           sip_ext_m = SIPchan.match(chan)
           if sip_ext_m:
             sip_ext = sip_ext_m.group(1)
-            print(f"Extension={sip_ext} caller_name={cname}")
+            print("Extension="+sip_ext+" caller_name="+cname+"")
 #            if cname:
 #              print("need call window")
 #              if "window" in chaninfo:
 #                print("call window exists")
 #              else:
-#                print(f"Newstate: create call window on {uid} shop={cname}")
+#                print(f"Newstate: create call window on "+uid+" shop="+cname+"")
 #                shop_info = shops.by_name.get(cname, ["Нет данных x1", "скрипт", "x3"])
 #                cw = add_call_window(shop_info, sip_ext, uid, None)
 #                cw.direction = "incoming"
@@ -771,15 +772,15 @@ def event_listener(event,**kwargs):
         uid = event.keys["Uniqueid"]
         c=calls.get(uid)
         c["monitored"] = True
-        print(f"Recording start on channel {uid}")
+        print("Recording start on channel "+uid+"")
         sw = c.get("window")
         if sw:
-          print(f"rec_uid={uid} same as window")
+          print("rec_uid="+uid+" same as window")
           sw.rec_uid = uid
 
     elif event.name=="MonitorStop":
         uid = event.keys["Uniqueid"]
-        print(f"Recording stop on channel {uid}")
+        print("Recording stop on channel "+uid+"")
         c=calls.get(uid)
         if c:
           c["monitored"] = False
@@ -820,7 +821,7 @@ def event_listener(event,**kwargs):
       if changes and "window" in bridges[buid][0] and "rec_uid" in bridges[buid][0]:
         w_chan = bridges[buid][0]["window"]
         rec_uid = bridges[buid][0]["rec_uid"]
-        print(f"setting rec_uid for window on channel {w_chan} to {rec_uid}")
+        print("setting rec_uid for window on channel "+w_chan+" to "+rec_uid+"")
         calls[w_chan]["window"].rec_uid = rec_uid
         del w_chan, rec_uid
 
@@ -835,15 +836,15 @@ def event_listener(event,**kwargs):
       uid1 = event.keys["Uniqueid1"]
       uid2 = event.keys["Uniqueid2"]
       bstate = event.keys["Bridgestate"]
-      print(f"\\  {bstate} {uid1}<->{uid2}")
+      print("\\  "+bstate+" "+uid1+"<->"+uid2+"")
 
       if calls.get(uid1, {}).get("monitored") and calls.get(uid2, {}).get("window"):
         calls[uid2]["window"].rec_uid = uid1
-        print(f"windows on {uid2} has monitor on {uid1}")
+        print("windows on "+uid2+" has monitor on "+uid1+"")
 
       if calls.get(uid2, {}).get("monitored") and calls.get(uid1, {}).get("window"):
         calls[uid1]["window"].rec_uid = uid2
-        print(f"windows on {uid1} has monitor on {uid2}")
+        print("windows on "+uid1+" has monitor on "+uid2+"")
       # may be we need lists here?
 
       if calls.get(uid2, {}).get("window"):
