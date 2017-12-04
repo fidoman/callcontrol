@@ -25,7 +25,11 @@ def load_data(what):
     print("error:", repr(resp.read(1000)))
     raise Exception("server did not return JSON data")
 
-  confdata = json.load(resp)
+  jsondata = resp.read()
+  if type(jsondata)==bytes:
+    jsondata=jsondata.decode("UTF-8") # python3.6 returns str, 3.5 does bytes
+
+  confdata = json.loads(jsondata)
 
   return confdata
 
