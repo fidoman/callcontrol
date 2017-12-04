@@ -37,12 +37,13 @@ help_window = None
 
 def show_help(url, retry=True):
    global help_window
-   try:
+   if help_window:
      c = read_help_window_conf()
      help_window.set_window_position(c["x"], c["y"])
      help_window.set_window_size(c["w"], c["h"])
      help_window.get(url)
-   except:
+
+   else:
 
 #  if help_window:
 #    print("already open", help_window.title)
@@ -69,7 +70,6 @@ def show_help(url, retry=True):
 
 def close_help():
   global help_window
-  pass
   try:
     if help_window:
       help_window.close()
@@ -77,10 +77,17 @@ def close_help():
   except:
     print("error in close_help")
 
-if __name__=="__main__":
+def test():
   import time
-#test_call()
-  show_help("https://www.mail.ru")
-  time.sleep(5)
-  close_help()
-#test_call()
+  try:
+    show_help("https://www.mail.ru")
+    time.sleep(3)
+    show_help("https://www.yandex.ru")
+    time.sleep(3)
+    show_help("https://www.google.com")
+    time.sleep(3)
+  finally:
+    close_help()
+
+if __name__=="__main__":
+  test()
