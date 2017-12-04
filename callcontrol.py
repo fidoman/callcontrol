@@ -571,7 +571,7 @@ def event_listener(event,**kwargs):
       dest = event.keys.get("Destination") or event.keys.get("DestChannel")
       subevt = event.keys.get("SubEvent")
 #      print(f"\\ {subevt} {dial}: {chan} [{callerchan}] -> {dest} [{calledchan}]")
-      print("\\ "+subevt+" "+dial+": "+chan+" ["+callerchan+"] -> "+dest+" ["+calledchan+"]")
+      print("\\ "+str(subevt)+" "+str(dial)+": "+str(chan)+" ["+str(callerchan)+"] -> "+str(dest)+" ["+str(calledchan)+"]")
       print("caller:", calls.get(callerchan))
       print("callee:", calls.get(calledchan))
       if subevt=="Begin" or event.name=="DialBegin":
@@ -691,7 +691,7 @@ def event_listener(event,**kwargs):
       uid=event.keys.get("Uniqueid")
 
       chaninfo = calls.setdefault(uid, {})
-      print("\\ "+uid+" "+chan+" "+chaninfo.get('state')+" ("+chaninfo.get('statedesc')+") -> "+cstate+" ("+cstatedesc+") == "+cnum+" "+cname+"")
+      print("\\ "+str(uid)+" "+str(chan)+" "+str(chaninfo.get('state'))+" ("+str(chaninfo.get('statedesc'))+") -> "+str(cstate)+" ("+str(cstatedesc)+") == "+str(cnum)+" "+str(cname)+"")
       chaninfo["state"] = cstate
       chaninfo["statedesc"] = cstatedesc
 
@@ -836,7 +836,7 @@ def event_listener(event,**kwargs):
       uid1 = event.keys["Uniqueid1"]
       uid2 = event.keys["Uniqueid2"]
       bstate = event.keys["Bridgestate"]
-      print("\\  "+bstate+" "+uid1+"<->"+uid2+"")
+      print("\\  "+str(bstate)+" "+str(uid1)+"<->"+str(uid2)+"")
 
       if calls.get(uid1, {}).get("monitored") and calls.get(uid2, {}).get("window"):
         calls[uid2]["window"].rec_uid = uid1
