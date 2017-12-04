@@ -21,7 +21,7 @@ def get_operators():
         print("error:", repr(resp.read(1000)))
         raise Exception("server did not return JSON data")
       else:
-        data = json.load(resp)
+        data = json.loads(resp.read().decode("UTF-8"))
         if "keymap" in data:
           km=data["keymap"]
 #          print(km)

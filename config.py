@@ -58,7 +58,7 @@ def backend_query(what, params):
         print("error:", repr(resp.read(1000)))
         raise Exception("server did not return JSON data")
       else:
-        data = json.load(resp)
+        data = json.loads(resp.read().decode("UTF-8"))
         return data
 
     except Exception as e:

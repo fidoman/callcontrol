@@ -478,7 +478,7 @@ def bg_task():
           print("error:", repr(resp.read(1000)))
           raise Exception("server did not return JSON data")
         else:
-          r = json.load(resp)
+          r = json.loads(resp.read().decode("ascii"))
           print("result:", r)
           if r.get("status")!="added":
             raise Exception("record is not added on server")
