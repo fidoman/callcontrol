@@ -665,6 +665,8 @@ def event_listener(event,**kwargs):
 
             if make_sticky:
               cw.sticky = True
+              # open shop script instantly on operator-initiated calls
+              open_shop_doc(cw, cw.shop_info)
 
             if (calls[callerchan] or {}).get("monitored"):
               cw.rec_uid = callerchan
