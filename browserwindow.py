@@ -32,13 +32,12 @@ def test_call():
     test_window = None
 
 help_window = None
-
-
+help_window_conf = None
 
 def show_help(url, retry=True):
-   global help_window
+   global help_window, help_window_conf
    if help_window:
-     c = read_help_window_conf()
+     c = help_window_conf = read_help_window_conf()
      help_window.set_window_position(c["x"], c["y"])
      help_window.set_window_size(c["w"], c["h"])
      help_window.get(url)
@@ -49,7 +48,7 @@ def show_help(url, retry=True):
 #    print("already open", help_window.title)
 #    return
      if retry:
-       c = read_help_window_conf()
+       c = help_window_conf = read_help_window_conf()
        o=webdriver.ChromeOptions()
        o.add_argument("disable-infobars");
        o.add_argument("--window-size=%(w)d,%(h)d"%c);
@@ -59,6 +58,31 @@ def show_help(url, retry=True):
        show_help(url, False)
      else:
        print("cannot show help")
+
+def update_help_window_conf():
+  global help_window, help_window_conf
+  if help_window:
+    pos = help_window.get_window_position()
+    size = help_window.get_window_size()
+    #print(pos, size)
+    update = False
+    if pos['x']!=help_window_conf['x']:
+      help_window_conf['x'] = pos['x']
+      update = True
+    if pos['y']!=help_window_conf['y']:
+      help_window_conf['y'] = pos['y']
+      update = True
+    if size['width']!=help_window_conf['w']:
+      help_window_conf['w'] = size['width']
+      update = True
+    if size['height']!=help_window_conf['h']:
+      help_window_conf['h'] = size['height']
+      update = True
+
+    if update:
+      print("Save help window disposition", help_window_conf)
+      save_help_window_conf(help_window_conf)
+
 
 #show_help("http://gmail.com/")
 #print(dir(help_window))

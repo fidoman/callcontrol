@@ -942,9 +942,13 @@ bg_run = True
 bgthread.start()
 
 def init_help_window():
+  global bg_run
   try:
     browserwindow.show_help("about:blank")
     print("help window have been initialized")
+    while bg_run:
+      browserwindow.update_help_window_conf()
+      time.sleep(5)
   except Exception as e:
     print(e)
 
