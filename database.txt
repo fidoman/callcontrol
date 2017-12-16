@@ -115,7 +115,8 @@ grant select on sip_ext to cc_data;
 
 create table tags (
 tag_id serial primary key,
-tag_name varchar unique
+tag_name varchar unique,
+tag_hasdata boolean
 );
 // populate with call tags
 grant select on tags to cc_data;
@@ -148,6 +149,7 @@ insert into tags (tag_name) values ('Без записи');
 create table call_log (
   cl_id bigserial primary key, cl_rand char(32),
   cl_tag integer references tags (tag_id), 
+  cl_tagdata varchar, 
   cl_operator integer references operators(op_id), 
   cl_operator_name varchar;
   cl_rec_uid varchar,
@@ -211,14 +213,18 @@ CREATE INDEX src ON cdr USING btree (src);
 grant insert on cdr to cdr;
 grant select on cdr to cc_data;
 
-create table scheduled_calls (
-oc_id bigserial not null,
-oc_shop_name varchar,
-oc_shop_phone varchar,
-oc_client_phone varchar,
-oc_after_call varchar,
-oc_order varchar,
-oc_when timestamp with time zone,
-oc_lock_time timestamp with time zone,
-oc_lock_by varchar references operators(op_ext)
+create table leads (
+l_id bigserial not null,
+l_shop_name varchar,
+l_shop_phone varchar,
+l_shop_eid varchar,
+l_client_phone varchar,
+l_note varchar,
+l_order varchar,
+l_when timestamp with time zone,
+l_lock_time timestamp with time zone,
+l_lock_by varchar references operators(op_ext),
+l_completed boolean default false
 );
+
+create unique index on operators(op_ext);
