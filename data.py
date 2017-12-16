@@ -462,6 +462,15 @@ try:
     if r: out["keymap"] = r.keymap
 
 
+  elif what == "leads":
+    out = {}
+    out["list"] = []
+    r = None
+    for r in db.prepare("select * from leads where not l_completed")():
+      r1 = [str(x) if type(x)==datetime else x for x in r]
+      out["list"].append(r1)
+    if r: out["keymap"] = r.keymap
+
   elif what == "new_order":
     out = { "order_id": "-1", "order_url": "about:blank" }
 
