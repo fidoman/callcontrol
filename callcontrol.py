@@ -101,6 +101,8 @@ def pause_queue_member(new_state=None):
   is_paused = new_state
   pause_button.config(text=_("Unpause") if is_paused else _("Pause"))
 
+def campaigns_window():
+  pass
 
 root.title("Call Control")
 my_extension = StringVar()
@@ -117,6 +119,10 @@ call_button = Button(root, text=_("Dial"), command = do_dial)
 call_button.grid(row=1, column=4)
 pause_button = Button(root, text=_("Pause"), command = pause_queue_member)
 pause_button.grid(row=1, column=5)
+
+# make this button blinking if there is sheduled calls that has come
+campaigns_button = Button(root, text=_("Campaigns"), command = campaigns_window)
+campaigns_button.grid(row=1, column=6)
 
 #add_window_button = Button(root, text="Тест", command = lambda: add_call_window("123", "45", "x", "chan"))
 #add_window_button.grid(row=2, column=1)
@@ -665,6 +671,8 @@ def event_listener(event,**kwargs):
 
             if make_sticky:
               cw.sticky = True
+              # open shop script instantly on operator-initiated calls
+              open_shop_doc(cw, cw.shop_info)
 
             if (calls[callerchan] or {}).get("monitored"):
               cw.rec_uid = callerchan
@@ -934,9 +942,13 @@ bg_run = True
 bgthread.start()
 
 def init_help_window():
+  global bg_run
   try:
     browserwindow.show_help("about:blank")
     print("help window have been initialized")
+    while bg_run:
+      browserwindow.update_help_window_conf()
+      time.sleep(5)
   except Exception as e:
     print(e)
 
