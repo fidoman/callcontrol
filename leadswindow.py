@@ -37,6 +37,19 @@ def select_lead(x, leadslist, myframe):
   else:
     selection = selection[0]
   print(selection, leadslist.get(selection), leads_window.leadsmap.get(leadslist.get(selection)))
+  # lead data
+  fields = leads_window.leadskeys
+  data = leads_window.leadsmap.get(leadslist.get(selection))
+  Button(myframe, text="call", command=exit).grid(row=0, column=0)
+
+  Label(myframe, text="shop phone").grid(row=1, column=0)
+  Label(myframe, text=data[fields["l_shop_phone"]]).grid(row=1, column=1)
+  Label(myframe, text="client phone").grid(row=2, column=1)
+  Label(myframe, text=data[fields["l_client_phone"]]).grid(row=2, column=1)
+  print(fields)
+
+  # history
+  # client note
 
 def hide_leads_window():
   global leads_window
@@ -83,6 +96,7 @@ def update_leads_window():
   print(fields)
 
   leads_window.leadsmap = {}
+  leads_window.leadskeys = fields
   for l1 in data:
     print(l1[fields['l_shop_phone']])
     print(l1[fields['l_client_phone']])
