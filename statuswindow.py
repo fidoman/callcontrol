@@ -125,7 +125,7 @@ def create_status_window(sw, extstats, operators, commands):
 
 def cmd_tr(ext, arg):
   client, channel, context = arg
-  print(client, channel, context, ext)
+  print("Blind transfer", client, channel, context, ext)
   action = SimpleAction(
 #    'Redirect',
     'BlindTransfer', 
@@ -144,7 +144,7 @@ def cmd_tr(ext, arg):
 
 def cmd_at(ext, arg):
   client, channel, context = arg
-  print(client, channel, context, ext)
+  print("Attended transfer", client, channel, context, ext)
   action = SimpleAction(
     'Atxfer',
     Channel = channel,
