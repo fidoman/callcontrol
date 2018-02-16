@@ -597,7 +597,13 @@ def event_listener(event,**kwargs):
           int_ext = dial
           external_channel = callerchan
           internal_channel = calledchan
+
+          # use known callerid or try to get it from current message
           external = calls[callerchan]["callerid"]
+          if external == "<unknown>":
+            external = event.keys.get("CallerIDNum") # after transfer newstate does not contain callerid
+            calls[callerchan]["callerid"] = external
+
           direction = "incoming"
         elif dial.startswith("sipout"):
           print("call to sipout")
