@@ -31,7 +31,10 @@ def save():
     print("error:", repr(resp.read(1000)))
     root.bell()
     return
-  confdata = json.load(resp)
+  print(resp.headers)
+  jsondata = resp.read().decode('ascii')
+  print(jsondata)
+  confdata = json.loads(jsondata)
   print(confdata)
 
   # get manager user/pass from server
