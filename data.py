@@ -73,7 +73,29 @@ try:
     else:
       out = None
 
-#  elif...
+ elif what == "get_call_for_order":
+    out=[]
+    params = 'order_id', 'shop_id', 'start_time'
+    z = locals()
+    [z.update({x: form.getvalue(x)}) for x in params]
+    q=db.prepare("select call_log.* from call_log, shops where shop_eid=$1 and cl_shop_phone=shop_phone and cl_order=$2")#(shop_id, order_id)
+#    out.append(q.column_names)
+    for l in q(shop_id, order_id):
+#      d = {}
+#      d[
+      out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
+
+ elif what == "get_calls_for_shop":
+    out=[]
+    params = 'shop_id', 'start_time'
+    z = locals()
+    [z.update({x: form.getvalue(x)}) for x in params]
+    q=db.prepare("select call_log.* from call_log, shops where shop_eid=$1 and cl_shop_phone=shop_phone")#(shop_id, order_id)
+#    out.append(q.column_names)
+    for l in q(shop_id):
+#      d = {}
+#      d[
+      out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
 
  else:
   # require auth
@@ -169,19 +191,29 @@ try:
       uid = form.getvalue("uid")
       direction = form.getvalue("direction")
 
+# one call may have many tags, automatically set ('unanswered') and multiple operator's tags (such as 'tranferred')
       db.prepare("insert into call_log ("
 		"cl_rand, cl_tag, cl_operator, cl_operator_name, cl_rec_uid, cl_client_phone, cl_shop_phone, "
 		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note, cl_order, cl_uid, cl_direction) "
-		"values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) "
-		"on conflict (cl_uid) do "
-		"update set (cl_rand, cl_tag, cl_operator, cl_operator_name, cl_rec_uid, cl_client_phone, cl_shop_phone, "
-		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note, cl_order, cl_direction) = "
-		"(EXCLUDED.cl_rand, EXCLUDED.cl_tag, EXCLUDED.cl_operator, EXCLUDED.cl_operator_name, EXCLUDED.cl_rec_uid, "
-		"EXCLUDED.cl_client_phone, EXCLUDED.cl_shop_phone, "
-		"EXCLUDED.cl_shop_name, EXCLUDED.cl_ring_time, EXCLUDED.cl_answer_time, EXCLUDED.cl_end_time, "
-		"EXCLUDED.cl_close_time, EXCLUDED.cl_note, EXCLUDED.cl_order, EXCLUDED.cl_direction)")\
+		"values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ")\
 	(rand, tag_id, op_id, op_name, rec_uid, client_phone, shop_phone, shop_name, ring_time, answer_time,
 	end_time, close_time, note, order, uid, direction)
+
+
+#      db.prepare("insert into call_log ("
+#		"cl_rand, cl_tag, cl_operator, cl_operator_name, cl_rec_uid, cl_client_phone, cl_shop_phone, "
+#		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note, cl_order, cl_uid, cl_direction) "
+#		"values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) "
+#		"on conflict (cl_uid) do "
+#		"update set (cl_rand, cl_tag, cl_operator, cl_operator_name, cl_rec_uid, cl_client_phone, cl_shop_phone, "
+#		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note, cl_order, cl_direction) = "
+#		"(EXCLUDED.cl_rand, EXCLUDED.cl_tag, EXCLUDED.cl_operator, EXCLUDED.cl_operator_name, EXCLUDED.cl_rec_uid, "
+#		"EXCLUDED.cl_client_phone, EXCLUDED.cl_shop_phone, "
+#		"EXCLUDED.cl_shop_name, EXCLUDED.cl_ring_time, EXCLUDED.cl_answer_time, EXCLUDED.cl_end_time, "
+#		"EXCLUDED.cl_close_time, EXCLUDED.cl_note, EXCLUDED.cl_order, EXCLUDED.cl_direction)")\
+#	(rand, tag_id, op_id, op_name, rec_uid, client_phone, shop_phone, shop_name, ring_time, answer_time,
+#	end_time, close_time, note, order, uid, direction)
+
 #	(rand, tag_id, op_id, op_name, rec_uid, client_phone, shop_phone, shop_name, ring_time.astimezone(tz=None), answer_time.astimezone(tz=None),
 #	end_time.astimezone(tz=None), close_time.astimezone(tz=None), note, order, uid, direction)
 

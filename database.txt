@@ -165,7 +165,7 @@ create table call_log (
   cl_uid varchar,
   cl_direction varchar
 );
-create unique index on call_log (cl_uid);
+#create unique index on call_log (cl_uid);
 
 grant select, insert, update on call_log to cc_data;
 grant select, update on call_log_cl_id_seq to cc_data;
@@ -226,5 +226,7 @@ l_lock_time timestamp with time zone,
 l_lock_by varchar references operators(op_ext),
 l_completed boolean default false
 );
+
+grant select,insert,update on leads to cc_data;
 
 create unique index on operators(op_ext);
