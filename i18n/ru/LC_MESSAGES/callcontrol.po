@@ -31,6 +31,9 @@ msgstr "Внутренний номер"
 msgid "Dial"
 msgstr "Звонок"
 
+msgid "Campaigns"
+msgstr "Обзвон"
+
 msgid "<nothing here>"
 msgstr "<нет записей>"
 

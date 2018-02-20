@@ -96,9 +96,8 @@ def create_status_window(sw, extstats, operators, commands):
       elem_stat.pack(side=LEFT)
 
       for c_txt, c_func, c_arg in commands:
-        cmd = lambda z=op_txt, t=c_arg: c_func(z, t)
-        print(c_func, op_txt, cmd)
-        c_but = Button(elem_fr, text=c_txt, command=cmd)
+        #print("adding function", c_func, "operator", op_txt)
+        c_but = Button(elem_fr, text=c_txt, command=lambda z=op_txt, t=c_arg, f=c_func: f(z, t))
         c_but.pack(side=RIGHT)
 
       elem_fr.grid(row=op_pos[0], column=op_pos[1], sticky=W+E)
@@ -125,7 +124,7 @@ def create_status_window(sw, extstats, operators, commands):
 
 def cmd_tr(ext, arg):
   client, channel, context = arg
-  print(client, channel, context, ext)
+  print("Blind transfer", client, channel, context, ext)
   action = SimpleAction(
 #    'Redirect',
     'BlindTransfer', 
@@ -144,7 +143,7 @@ def cmd_tr(ext, arg):
 
 def cmd_at(ext, arg):
   client, channel, context = arg
-  print(client, channel, context, ext)
+  print("Attended transfer", client, channel, context, ext)
   action = SimpleAction(
     'Atxfer',
     Channel = channel,
@@ -159,7 +158,7 @@ def cmd_at(ext, arg):
 def cmd_spy(ext, arg):
   global astrisk_conf
   client, channel, context = arg
-  print(client, channel, context, ext)
+  print("spy", client, channel, context, ext)
 
   action = SimpleAction('Originate',                                          
                                 Channel = "Local/"+asterisk_conf["ext"]+"@from-internal-auto",
@@ -168,12 +167,24 @@ def cmd_spy(ext, arg):
                                 Priority = 1,
                                 WaitTime = 15,
                                 Callerid = "spy-%s"%ext)
-       
+
   print(action)
   r = client.send_action(action)
   print(r.response)
 
+### test
 
+def cmd_a1(ext, arg):
+  global astrisk_conf
+  client, channel, context = arg
+  print("a1", client, channel, context, ext)
+
+def cmd_a2(ext, arg):
+  global astrisk_conf
+  client, channel, context = arg
+  print("a2", client, channel, context, ext)
+
+###
 
 def status_updater(extstats, event, **kwargs):
   if event.name=="ExtensionStatus": # Exten Context Hint Status
@@ -214,7 +225,10 @@ def status_window_operation(mode, root, args):
     ch = args
     client.add_event_listener(lambda event, w=root, ch=ch, **kwargs: hangup_closer(event, w, ch, **kwargs))
   elif mode=="control":
-    commands = [("SPY", cmd_spy, (client, args, asterisk_conf["internalcontext"]))]
+    commands = [("SPY", cmd_spy, (client, args, asterisk_conf["internalcontext"])),
+		("A1", cmd_a1, (client, args, asterisk_conf["internalcontext"])),
+		("A2", cmd_a2, (client, args, asterisk_conf["internalcontext"])),
+    ]
   else:
     commands = []
 

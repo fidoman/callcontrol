@@ -140,7 +140,7 @@ except:
   pass
 root.protocol("WM_DELETE_WINDOW", lambda: None)
 root.bind("<Control-Shift-Q>", root_quit)
-root.bind("<Control-Shift-T>", lambda _: add_call_window("123", "45", "x", "chan"))
+#root.bind("<Control-Shift-T>", lambda _: add_call_window("123", "45", "x", "chan"))
 root.bind("<Control-Shift-W>", lambda _: browserwindow.test_call())
 
 
@@ -239,7 +239,8 @@ def set_call_window_callerid(cw, callerid):
     cw.history_keys = km
 
 
-def add_call_window(shop_info, operator, channel, uid):
+def add_call_window(shop_info, operator, external_channel, internal_channel, uid):
+# ..., external_channel, caller_channel
  try:
   global call_windows
   global shops
@@ -255,7 +256,7 @@ def add_call_window(shop_info, operator, channel, uid):
   cw.direction = None
   cw.uid = uid
   cw.shop_info = shop_info
-  cw.channel = channel
+  cw.channel = external_channel
   cw.operator = operator # save for logging
   cw.callerid = None
 
@@ -275,10 +276,10 @@ def add_call_window(shop_info, operator, channel, uid):
   sv_label.grid(row=0,column=0)
   sv_data.grid(row=0,column=1)
 
-  transf_b = Button(cw, text=_('hangup'), command=lambda ch=channel: hangup(ch))
-  transf_b.grid(row=0,column=2)
+  hangup_b = Button(cw, text=_('hangup'), command=lambda ch=internal_channel: hangup(ch))
+  hangup_b.grid(row=0,column=2)
 
-  transf_b = Button(cw, text=_('transfer'), command=lambda ch=channel: transfer_window(ch))
+  transf_b = Button(cw, text=_('transfer'), command=lambda ch=internal_channel: transfer_window(ch))
   transf_b.grid(row=0,column=3)
 
   cw.client = StringVar(value='')
@@ -578,8 +579,8 @@ def event_listener(event,**kwargs):
       subevt = event.keys.get("SubEvent")
 #      print(f"\\ {subevt} {dial}: {chan} [{callerchan}] -> {dest} [{calledchan}]")
       print("\\ "+str(subevt)+" "+str(dial)+": "+str(chan)+" ["+str(callerchan)+"] -> "+str(dest)+" ["+str(calledchan)+"]")
-      print("caller:", calls.get(callerchan))
-      print("callee:", calls.get(calledchan))
+      print("caller:", callerchan, calls.get(callerchan))
+      print("callee:", calledchan, calls.get(calledchan))
       if subevt=="Begin" or event.name=="DialBegin":
        if callerchan:
         calls[callerchan]["calleduid"] = calledchan
@@ -594,12 +595,20 @@ def event_listener(event,**kwargs):
           print("call from sipout")
           shop_sipout_ext = calls[callerchan]["destination"]
           int_ext = dial
-          channel_of_interest = callerchan
+          external_channel = callerchan
+          internal_channel = calledchan
+
+          # use known callerid or try to get it from current message
           external = calls[callerchan]["callerid"]
+          if external == "<unknown>":
+            external = event.keys.get("CallerIDNum") # after transfer newstate does not contain callerid
+            calls[callerchan]["callerid"] = external
+
           direction = "incoming"
         elif dial.startswith("sipout"):
           print("call to sipout")
-          channel_of_interest = calledchan
+          external_channel = calledchan
+          internal_channel = callerchan
           int_ext = calls[callerchan]["destination"]
           external = dial.split("/",1)[1]
           # requre that all sipout channel are named as sipoutNNN
@@ -608,12 +617,13 @@ def event_listener(event,**kwargs):
           direction = "outgoing"
         else:
           print("other call")
-          channel_of_interest = None
+          external_channel = None
+          internal_channel = None
           int_ext = None
           shop_sipout_ext = None
           external = None
 
-        print("External "+str(external)+" on "+str(channel_of_interest)+" internal "+str(int_ext)+" shop "+str(shop_sipout_ext)+"; "+str(callerchan)+"-->"+str(calledchan)+"")
+        print("External "+str(external)+" on "+str(external_channel)+" internal "+str(int_ext)+" shop "+str(shop_sipout_ext)+"; "+str(callerchan)+"-->"+str(calledchan)+"")
 
         lbr = calls[callerchan].get("localbridge")
         lbrcalleduid = None
@@ -654,20 +664,20 @@ def event_listener(event,**kwargs):
 #          elif event.keys["Channel"].startswith("Local"):
 #            print("local call")
 #          else:
-            print("Dial: create call window on channel uid", channel_of_interest)
-            if "window" in calls[channel_of_interest]:
+            print("Dial: create call window on channel uid", external_channel)
+            if "window" in calls[external_channel]:
               print("window exists, rewriting phone: "+str(external)+" new uid "+str(callerchan)+"")
-              cw = calls[channel_of_interest]["window"]
+              cw = calls[external_channel]["window"]
               set_call_window_callerid(cw, unsip(external))
               cw.uid = cw.uid or callerchan 
             else:
               shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "", "x3"])
-              cw = add_call_window(shop_info, int_ext, channel_of_interest, callerchan) #lbrcalleduid or callerchan) it is easy on asterisk 13
+              cw = add_call_window(shop_info, int_ext, external_channel, internal_channel, callerchan) #lbrcalleduid or callerchan) it is easy on asterisk 13
               cw.direction = direction
               set_call_window_callerid(cw, unsip(external))
               print("new window "+str(cw.direction)+" uid "+str(cw.uid)+" phone "+str(unsip(external))+"")
-              calls[channel_of_interest]["window"] = cw
-              cw.statusvar.set(calls[channel_of_interest]["statedesc"])
+              calls[external_channel]["window"] = cw
+              cw.statusvar.set(calls[external_channel]["statedesc"])
 
             if make_sticky:
               cw.sticky = True
