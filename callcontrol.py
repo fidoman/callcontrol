@@ -265,7 +265,7 @@ def add_call_window(shop_info, operator, external_channel, internal_channel, uid
   cw.ring_time = None
   cw.answer_time = None
   cw.end_time = None
-  cw.shopphone = shop_info[2]
+  cw.shopphone = shop_info[1]
 
   cw.sticky = False # cannot close without tag
   cw.rec_uid = None # voice record
@@ -347,7 +347,7 @@ def add_call_window(shop_info, operator, external_channel, internal_channel, uid
 
 
 def open_shop_doc(w, shop_info):
-  page = shop_info[1]
+  page = shop_info[2]
   if page:
     print("Open", page)
     #os.system('start '+page)
@@ -401,7 +401,8 @@ def close_call_window(window, close_unanswered = False):
         "close_time": datetime.utcnow(),
         "order": window.order.get(),
 	"uid": window.uid,
-        "direction": window.direction
+        "direction": window.direction,
+        "shop_lkid": window.shop_info[5]
     })
 
   #print(id(window))
@@ -671,7 +672,7 @@ def event_listener(event,**kwargs):
               set_call_window_callerid(cw, unsip(external))
               cw.uid = cw.uid or callerchan 
             else:
-              shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "", "x3"])
+              shop_info = shops.by_dest.get(shop_sipout_ext, ["Нет данных x1", "", "x3", "x4","x5","x6"])
               cw = add_call_window(shop_info, int_ext, external_channel, internal_channel, callerchan) #lbrcalleduid or callerchan) it is easy on asterisk 13
               cw.direction = direction
               set_call_window_callerid(cw, unsip(external))
@@ -931,13 +932,13 @@ class ShopsData:
   def load(self):
     for s in load_data("shops"):
       #print(s) 
-      self.by_phone[s[1]] = self.by_dest[s[3]] = self.by_name[s[0]] = (s[0], s[2], s[1])
+      self.by_phone[s[1]] = self.by_dest[s[3]] = self.by_name[s[0]] = s
       # name, script, phone
 
 
 shops = ShopsData()
 shops.load()
-#print(shops.by_dest); exit()
+print(shops.by_dest); exit()
 
 call_tags = []
 for tag_id, tag_name in load_data("tags"):
