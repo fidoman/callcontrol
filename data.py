@@ -13,6 +13,7 @@ import itertools, random
 import urllib.parse
 from datetime import datetime, timezone
 import os
+import dateutil.parser
 
 #cgitb.enable(display=0, logdir="/var/log/ccdata")
 
@@ -87,14 +88,17 @@ try:
 
  elif what == "get_calls_for_shop":
     out=[]
-    params = 'shop_id', 'start_time'
+    params = 'shop_id', 'start_time'#, 'end_time'
     z = locals()
     [z.update({x: form.getvalue(x)}) for x in params]
-    q=db.prepare("select call_log.* from call_log, shops where shop_eid=$1 and cl_shop_phone=shop_phone")#(shop_id, order_id)
+
+    shop_list = shop_id.split(',')
+    start_time = dateutil.parser.parse(start_time)
+
+#    q=db.prepare("select call_log.* from call_log, shops where shop_eid=ANY($1) and cl_shop_phone=shop_phone and cl_ring_time>$2")#(shop_id, order_id)
+    q=db.prepare("select call_log.* from call_log, shops where cl_shop_lkid=ANY($1) and cl_shop_phone=shop_phone and cl_ring_time>$2")#(shop_id, order_id)
 #    out.append(q.column_names)
-    for l in q(shop_id):
-#      d = {}
-#      d[
+    for l in q(shop_list, start_time):
       out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
 
  else:
@@ -190,14 +194,15 @@ try:
 
       uid = form.getvalue("uid")
       direction = form.getvalue("direction")
+      shop_lkid = form.getvalue("shop_lkid")
 
 # one call may have many tags, automatically set ('unanswered') and multiple operator's tags (such as 'tranferred')
       db.prepare("insert into call_log ("
 		"cl_rand, cl_tag, cl_operator, cl_operator_name, cl_rec_uid, cl_client_phone, cl_shop_phone, "
-		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note, cl_order, cl_uid, cl_direction) "
+		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note, cl_order, cl_uid, cl_direction, cl_shop_lkid) "
 		"values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16) ")\
 	(rand, tag_id, op_id, op_name, rec_uid, client_phone, shop_phone, shop_name, ring_time, answer_time,
-	end_time, close_time, note, order, uid, direction)
+	end_time, close_time, note, order, uid, direction, shop_lkid)
 
 
 #      db.prepare("insert into call_log ("
