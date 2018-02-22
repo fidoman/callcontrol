@@ -76,10 +76,10 @@ try:
 
  elif what == "get_call_for_order":
     out=[]
-    params = 'order_id', 'shop_id', 'start_time'
+    params = 'order_id', 'shop_id'#, 'start_time'
     z = locals()
     [z.update({x: form.getvalue(x)}) for x in params]
-    q=db.prepare("select call_log.* from call_log, shops where shop_eid=$1 and cl_shop_phone=shop_phone and cl_order=$2")#(shop_id, order_id)
+    q=db.prepare("select * from call_log where cl_shop_lkid=$1 and cl_order=$2")#(shop_id, order_id)
 #    out.append(q.column_names)
     for l in q(shop_id, order_id):
 #      d = {}
@@ -96,7 +96,7 @@ try:
     start_time = iso8601.parse_date(start_time)
 
 #    q=db.prepare("select call_log.* from call_log, shops where shop_eid=ANY($1) and cl_shop_phone=shop_phone and cl_ring_time>$2")#(shop_id, order_id)
-    q=db.prepare("select call_log.* from call_log, shops where cl_shop_lkid=ANY($1) and cl_shop_phone=shop_phone and cl_ring_time>$2")#(shop_id, order_id)
+    q=db.prepare("select * from call_log where cl_shop_lkid=ANY($1) and cl_ring_time>$2")#(shop_id, order_id)
 #    out.append(q.column_names)
     for l in q(shop_list, start_time):
       out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
