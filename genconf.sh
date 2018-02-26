@@ -15,4 +15,4 @@ python3 database.py sipout > /etc/asterisk/sip-sipout.conf
 python3 database.py sipout-register > /etc/asterisk/sip-sipout-register.conf
 python3 database.py operators > /etc/asterisk/sip-operators.conf
 
-asterisk -x reload
+/usr/sbin/asterisk -x reload

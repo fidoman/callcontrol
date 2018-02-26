@@ -101,6 +101,20 @@ try:
     for l in q(shop_list, start_time):
       out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
 
+ elif what == "get_tags":
+    out=[]
+    q = db.prepare("select * from tags")
+    for l in q():
+      out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
+
+ elif what == "get_shop":
+    out=[]
+    shop_lkid = form.getvalue("shop_id")
+    q = db.prepare("select * from shops where shop_eid=$1")
+    for l in q(shop_lkid):
+      out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
+
+
  else:
   # require auth
 
