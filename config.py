@@ -12,7 +12,19 @@ try:
 except:
   datapath = os.path.expandvars(r"%APPDATA%\callcontrol")
 
-asterisk_conf = json.load(open(os.path.join(datapath, ASTERCONF)))
+aconf_filepath = os.path.join(datapath, ASTERCONF)
+
+if not os.path.exists(aconf_filepath):
+  print("no conf file, initializing")
+  # no config or config does not have option "do not ask"
+  asterisk_conf = {}
+else:
+  asterisk_conf = json.load(open(aconf_filepath))
+
+if not asterisk_conf.get("do_not_ask", None):
+  print("reconfiguration")
+
+
 
 call_log_dir = os.path.join(datapath, "calls")
 

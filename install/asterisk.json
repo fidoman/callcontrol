@@ -1,8 +1,0 @@
-{ "address": "%(manager_host)s", 
-  "port": %(manager_port)s,
-  "username": "%(manager_user)s", 
-  "secret": "%(manager_pw)s",
-  "internalcontext": "from-internal",
-  "ext": "%(ext)s", "pw": "%(pw)s",
-  "data": "%(query_str)s"
-}
