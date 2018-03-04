@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 # Written by Sergey Dorofeev <sergey@fidoman.ru> for Fastery
 # Year 2017
 
