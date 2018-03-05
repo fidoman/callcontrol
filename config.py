@@ -23,8 +23,12 @@ else:
 
 if not asterisk_conf.get("do_not_ask", None):
   print("reconfiguration")
+  from ccconf import ask_config
+  asterisk_conf = ask_config(asterisk_conf)
+  with open(aconf_filepath, "w") as dst:
+    json.dump(asterisk_conf, dst)
 
-
+print("Asterisk configuration:", asterisk_conf)
 
 call_log_dir = os.path.join(datapath, "calls")
 

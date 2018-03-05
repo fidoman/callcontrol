@@ -5,16 +5,11 @@ import urllib.parse
 import json
 from tkinter import *
 
-dstpath = os.path.expandvars(r"%APPDATA%\MicroSIP")
-srcpath = os.path.dirname(sys.argv[0])
+#dstpath = os.path.expandvars(r"%APPDATA%\MicroSIP")
+#srcpath = os.path.dirname(sys.argv[0])
+#CONF = "microsip.ini"
 
-CONF = "microsip.ini"
-
-ASTERCONF = "asterisk.json"
-asterdstpath = os.path.expandvars(r"%APPDATA%\callcontrol")
-
-def save(x):
-  global srcpath, dstpath, asterdstpath, root, srv, ext, pw, CONF, ASTERCONF
+def save(root, x):
   str_srv = x[1].get()
   str_ext = x[2].get()
   str_pw = x[3].get()
@@ -27,6 +22,7 @@ def save(x):
 
   # urlencode ext and pw
   urlparams = urllib.parse.urlencode({'what': 'config', 'ext': str_ext, 'pw': str_pw})
+
   resp = urllib.request.urlopen(""+q_url+"?"+urlparams+"")
   if resp.headers.get_content_type() != 'application/json':
     print("error:", repr(resp.read(1000)))
@@ -39,30 +35,28 @@ def save(x):
   print(confdata)
 
   # get manager user/pass from server
-  os.makedirs(dstpath, exist_ok = True)
-  tpl = open(os.path.join(srcpath, CONF)).read()
-  conf = tpl % {"name": confdata["name"], "asterisk": str_srv, "extension": str_ext, "password": str_pw}
-  dst = open(os.path.join(dstpath, CONF), "w")
-  dst.write(conf)
+  #os.makedirs(dstpath, exist_ok = True)
+  #tpl = open(os.path.join(srcpath, CONF)).read()
+  #conf = tpl % {"name": confdata["name"], "asterisk": str_srv, "extension": str_ext, "password": str_pw}
+  #dst = open(os.path.join(dstpath, CONF), "w")
+  #dst.write(conf)
 
-  os.makedirs(asterdstpath, exist_ok = True)
-  tpl = open(os.path.join(srcpath, ASTERCONF)).read()
-  conf = tpl % {
-    "manager_host": confdata["manager_host"], 
-    "manager_port": confdata["manager_port"], 
-    "manager_user": confdata["manager_user"], 
-    "manager_pw": confdata["manager_pw"], 
-    "ext": str_ext,
-    "pw": str_pw,
-    "query_str": q_url,
-    "do_not_ask": int_dna
-  }
-  dst = open(os.path.join(asterdstpath, ASTERCONF), "w")
-  dst.write(conf)
+  #os.makedirs(asterdstpath, exist_ok = True)
+  #tpl = open(os.path.join(srcpath, ASTERCONF)).read()
+
+
+  x[0].conf["address"] = confdata["manager_host"]
+  x[0].conf["port"] = confdata["manager_port"]
+  x[0].conf["username"] = confdata["manager_user"]
+  x[0].conf["secret"] = confdata["manager_pw"]
+  x[0].conf["internalcontext"] = "from-internal"
+  x[0].conf["ext"] = str_ext
+  x[0].conf["pw"] = str_pw
+  x[0].conf["query_str"] = q_url
+  x[0].conf["do_not_ask"] = int_dna
 
   x[0].set(1)
-  x[0].conf = conf
-
+  root.quit()
 
 def ask_config(conf):
   root = Tk()
@@ -93,7 +87,8 @@ def ask_config(conf):
   dna.grid(row=4, column=2)
 
   saved = IntVar(value = 0)
-  Button(root, command = lambda x = [saved, srv_var, ext_var, pw_var, dna_var]: save(x), text="Сохранить").grid(row=100, column=1, columnspan=2, sticky=W+E)
+  saved.conf = conf
+  Button(root, command = lambda x = root, y = [saved, srv_var, ext_var, pw_var, dna_var]: save(x, y), text="Сохранить").grid(row=100, column=1, columnspan=2, sticky=W+E)
   root.mainloop()
   root.quit()
   print(saved.get())
@@ -182,15 +177,6 @@ disableSessionTimer=0
 [Dialed]
 """
 
-TPL_asterisk_conf = """{ "address": "%(manager_host)s", 
-  "port": %(manager_port)s,
-  "username": "%(manager_user)s", 
-  "secret": "%(manager_pw)s",
-  "internalcontext": "from-internal",
-  "ext": "%(ext)s", "pw": "%(pw)s",
-  "data": "%(query_str)s"
-}
-"""
 
 if __name__ == "__main__":
   print(ask_config({"address": "test"}))
