@@ -46,7 +46,7 @@ def save(root, x):
 
 
   x[0].conf["address"] = confdata["manager_host"]
-  x[0].conf["port"] = confdata["manager_port"]
+  x[0].conf["port"] = int(confdata["manager_port"])
   x[0].conf["username"] = confdata["manager_user"]
   x[0].conf["secret"] = confdata["manager_pw"]
   x[0].conf["internalcontext"] = "from-internal"
@@ -56,7 +56,7 @@ def save(root, x):
   x[0].conf["do_not_ask"] = int_dna
 
   x[0].set(1)
-  root.quit()
+  root.destroy()
 
 def ask_config(conf):
   root = Tk()
@@ -90,7 +90,6 @@ def ask_config(conf):
   saved.conf = conf
   Button(root, command = lambda x = root, y = [saved, srv_var, ext_var, pw_var, dna_var]: save(x, y), text="Сохранить").grid(row=100, column=1, columnspan=2, sticky=W+E)
   root.mainloop()
-  root.quit()
   print(saved.get())
   return saved.conf
 
