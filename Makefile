@@ -3,6 +3,9 @@ deb: copy
 	dpkg-deb -b debian
 	mv debian.deb callcontrol.deb
 
+repo:
+	cd  /var/www/repos/apt/debian &&  reprepro includedeb stretch /home/fastery/callcontrol/callcontrol.deb
+
 i18n/ru/LC_MESSAGES/callcontrol.mo: i18n/ru/LC_MESSAGES/callcontrol.po
 	msgfmt $< -o $@
 
