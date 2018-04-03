@@ -1,10 +1,5 @@
 import os
 
-conf_functions = {
-  "microsip": conf_microsip, 
-  "jitsi": conf_jitsi
-}
-
 def list_clients():
   return list(conf_functions.keys()) # need to filter by OS
 
@@ -205,3 +200,31 @@ net.java.sip.communicator.impl.protocol.sip.acc1522053275550.VP9/90000 = 0
 net.java.sip.communicator.impl.protocol.sip.acc1522053275550.XCAP_ENABLE = false
 net.java.sip.communicator.impl.protocol.sip.acc1522053275550.XIVO_ENABLE = false
 """
+
+# configurator functions
+#  subfunction to check possibility to configure
+#  subfunction to really configure
+
+def conf_microsip(c, checkonly=False):
+  if os.name != "nt":
+    if checkonly:
+      return False
+    raise Exception("MicroSIP is supported in Windows only")
+
+  if checkonly:
+    return True
+  make_microsip_conf(c, os.path.expandvars(r"%APPDATA%\MicroSIP\microsip.ini"))
+
+def conf_jitsi(c, checkonly=False):
+  if checkonly:
+    return True
+  if os.name == "nt":
+    make_jitsi_conf(c, os.path.expandvars(r"%APPDATA%\Jitsi\sip-communicator.properties"))
+  else:
+    make_jitsi_conf(c, os.path.expandvars(r"$HOME/.jitsi/sip-communicator.properties"))
+
+
+conf_functions = {
+  "microsip": conf_microsip, 
+  "jitsi": conf_jitsi
+}
