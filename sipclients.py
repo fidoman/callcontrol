@@ -1,7 +1,11 @@
 import os
 
 def list_clients():
-  return list(conf_functions.keys()) # need to filter by OS
+  avail = []
+  for c, func in conf_functions.items():
+    if func(None, checkonly=True):
+      avail.append(c)
+  return avail
 
 def configure_client(client_name, asterisk_conf):
   conf_functions[client_name](asterisk_conf)
@@ -228,3 +232,6 @@ conf_functions = {
   "microsip": conf_microsip, 
   "jitsi": conf_jitsi
 }
+
+if __name__=="__main__":
+  print("available configurators:", list_clients())
