@@ -101,9 +101,15 @@ disableSessionTimer=0
 
 
 def make_jitsi_conf(c, x):
+#use props.hsql.script.default file (it must be saved just after jitsi install)
+#add: 
+#  net.java.sip.communicator.plugin.provisioning.METHOD = Manual
+#  net.java.sip.communicator.plugin.provisioning.URL = asterisk_conf["query_str"]+'?what=jitsiconf?user=${username}&password=${password}&os=${osname}&hw=${hwaddr}&uuid=${uuid}&hostname=${hostname}')
+#server must reply with properties file from template below
+
   global TPL_jitsi
-  print(TPL_jitsi%c)
-  exit()
+  with open(x, "w") as conffile:
+    conffile.write(TPL_jitsi%c)
 
 # sip-communicator.properties
 TPL_jitsi="""net.java.sip.communicator.impl.gui.accounts.acc1522053277238.accountIndex = 0
@@ -204,6 +210,9 @@ net.java.sip.communicator.impl.protocol.sip.acc1522053275550.VP9/90000 = 0
 net.java.sip.communicator.impl.protocol.sip.acc1522053275550.XCAP_ENABLE = false
 net.java.sip.communicator.impl.protocol.sip.acc1522053275550.XIVO_ENABLE = false
 """
+
+
+
 
 # configurator functions
 #  subfunction to check possibility to configure

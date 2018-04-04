@@ -5,6 +5,8 @@ import urllib.parse
 import json
 from tkinter import *
 
+import sipclients
+
 #dstpath = os.path.expandvars(r"%APPDATA%\MicroSIP")
 #srcpath = os.path.dirname(sys.argv[0])
 #CONF = "microsip.ini"
@@ -14,7 +16,9 @@ def save(root, x):
   str_ext = x[2].get()
   str_pw = x[3].get()
   int_dna = x[4].get()
-  if not str_srv or not str_ext or not str_pw:
+  str_sipclient = x[5].get()
+
+  if not str_srv or not str_ext or not str_pw or not str_sipclient:
     root.bell()
     return
 
@@ -54,6 +58,10 @@ def save(root, x):
   x[0].conf["pw"] = str_pw
   x[0].conf["query_str"] = q_url
   x[0].conf["do_not_ask"] = int_dna
+  x[0].conf["sipclient"] = str_sipclient
+
+  print("saving SIP client configuration...")
+  sipclients.configure_client(str_sipclient, x[0].conf)
 
   x[0].set(1)
   root.destroy()
@@ -86,9 +94,13 @@ def ask_config(conf):
   dna = Checkbutton(root, variable=dna_var)
   dna.grid(row=4, column=2)
 
+  sipclient_var = StringVar(value = conf.get("sipclient", ""))
+  sipclient = OptionMenu(root, sipclient_var, *sipclients.list_clients())
+  sipclient.grid(row=5, column=2)
+
   saved = IntVar(value = 0)
   saved.conf = conf
-  Button(root, command = lambda x = root, y = [saved, srv_var, ext_var, pw_var, dna_var]: save(x, y), text="Сохранить").grid(row=100, column=1, columnspan=2, sticky=W+E)
+  Button(root, command = lambda x = root, y = [saved, srv_var, ext_var, pw_var, dna_var, sipclient_var]: save(x, y), text="Сохранить").grid(row=100, column=1, columnspan=2, sticky=W+E)
   root.mainloop()
   print(saved.get())
   return saved.get(), saved.conf

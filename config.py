@@ -2,7 +2,6 @@ import os
 import json
 import urllib.parse
 import urllib.request
-import sipclients
 
 ASTERCONF = "asterisk.json"
 
@@ -10,11 +9,8 @@ ASTERCONF = "asterisk.json"
 try:
   os.uname
   datapath = os.path.expandvars(r"$HOME/.callcontrol")
-  client_gen = lambda c, x = os.path.expandvars(r"$HOME/.jitsi/sip-communicator.properties"): sipclients.make_jitsi_conf(c, x)
 except:
   datapath = os.path.expandvars(r"%APPDATA%\callcontrol")
-  # r"%APPDATA%\Jitsi\sip-communicator.properties"
-  client_gen = lambda c, x = os.path.expandvars(r"%APPDATA%\MicroSIP\microsip.ini"): sipclients.make_microsip_conf(c, x)
 
 aconf_filepath = os.path.join(datapath, ASTERCONF)
 
@@ -35,8 +31,6 @@ if not asterisk_conf.get("do_not_ask", None):
     print("updating configs")
     with open(aconf_filepath, "w") as dst:
       json.dump(asterisk_conf, dst)
-    # save 
-    client_gen(asterisk_conf)
 
 
 call_log_dir = os.path.join(datapath, "calls")
