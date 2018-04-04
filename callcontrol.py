@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 # Written by Sergey Dorofeev <sergey@fidoman.ru> for Fastery
 # Year 2017
 
@@ -15,9 +17,12 @@ import re
 import gettext
 gettext.install('callcontrol')
 
+import config
+from config import asterisk_conf, call_log_dir, load_data, backend_query
+
+
 from statuswindow import status_window_operation
 
-from config import asterisk_conf, call_log_dir, load_data, backend_query
 
 from persistqueue import Queue
 call_log = Queue(call_log_dir)

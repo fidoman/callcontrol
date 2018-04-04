@@ -1,0 +1,106 @@
+https://jitsi.org/downloads/
+
+wget -qO - https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -
+sudo sh -c "echo 'deb https://download.jitsi.org stable/' > /etc/apt/sources.list.d/jitsi-stable.list"
+
+
+===
+net.java.sip.communicator.impl.gui.accounts.acc1522053277238.accountIndex = 0
+net.java.sip.communicator.impl.gui.accounts.acc1522053277238.lastAccountStatus = Online
+net.java.sip.communicator.impl.gui.accounts.acc1522053277238 = SIP:190@asterisk.fidoman.ru
+net.java.sip.communicator.impl.gui.accounts.acc1522053277238.wizard = net_java_sip_communicator_plugin_sipaccregwizz_SIPAccountRegistrationWizard
+net.java.sip.communicator.impl.gui.minimizeInsteadOfHide = true
+
+net.java.sip.communicator.impl.protocol.SingleCallInProgressPolicy.enabled=true
+
+service.gui.AUTO_POPUP_NEW_MESSAGE = yes
+
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550 = acc1522053275550
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.ACCOUNT_UID = SIP:190@asterisk.fidoman.ru
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.SERVER_ADDRESS = asterisk.fidoman.ru
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.SERVER_PORT = 5060
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.AUTO_ANSWER_CONDITIONAL_NAME = Answer-Mode
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.AUTO_ANSWER_CONDITIONAL_VALUE = Auto
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.AUTO_ANSWER_WITH_VIDEO = false
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.ENCRYPTED_PASSWORD = fgsVoo1RkgzsZQMz7AEmLA==
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.PROTOCOL_NAME = SIP
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.PROXY_ADDRESS = asterisk.fidoman.ru
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.PROXY_AUTO_CONFIG = false
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.PROXY_PORT = 5061
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.USER_ID = 190@asterisk.fidoman.ru
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.SUBSCRIPTION_EXPIRATION = 3600
+
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.AMR-WB/16000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.DEFAULT_ENCRYPTION = true
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.DEFAULT_SIPZRTP_ATTRIBUTE = true
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.DTMF_METHOD = AUTO_DTMF
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.DTMF_MINIMAL_TONE_DURATION = 70
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.AMR-WB/16000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.G722/8000 = 705
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.G723/8000 = 150
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.GSM/8000 = 450
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.H264/90000 = 1100
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.iLBC/8000 = 500
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.opus/48000 = 750
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.PCMA/8000 = 600
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.PCMU/8000 = 650
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.red/90000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.rtx/90000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.SILK/12000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.SILK/16000 = 713
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.SILK/24000 = 714
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.SILK/8000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.speex/16000 = 700
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.speex/32000 = 701
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.speex/8000 = 352
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.telephone-event/8000 = 1
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.ulpfec/90000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.VP8/90000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.Encodings.VP9/90000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.ENCRYPTION_PROTOCOL.DTLS-SRTP = 2
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.ENCRYPTION_PROTOCOL.SDES = 1
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.ENCRYPTION_PROTOCOL_STATUS.DTLS-SRTP = false
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.ENCRYPTION_PROTOCOL_STATUS.SDES = false
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.ENCRYPTION_PROTOCOL_STATUS.ZRTP = true
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.ENCRYPTION_PROTOCOL.ZRTP = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.FORCE_P2P_MODE = false
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.FORCE_PROXY_BYPASS = false
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.G722/8000 = 705
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.G723/8000 = 150
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.GSM/8000 = 450
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.H264/90000 = 1100
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.iLBC/8000 = 500
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.IS_PRESENCE_ENABLED = true
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.KEEP_ALIVE_INTERVAL = 25
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.KEEP_ALIVE_METHOD = OPTIONS
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.OPT_CLIST_SERVER_URI =
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.OPT_CLIST_USER =
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.OPT_CLIST_USE_SIP_CREDETIALS = false
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.opus/48000 = 750
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.OVERRIDE_ENCODINGS = false
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.PCMA/8000 = 600
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.PCMU/8000 = 650
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.POLLING_PERIOD = 30
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.PREFERRED_TRANSPORT = TLS
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.red/90000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.rtx/90000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.SAVP_OPTION = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.SDES_CIPHER_SUITES = AES_CM_128_HMAC_SHA1_80,AES_CM_128_HMAC_SHA1_32
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.SILK/12000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.SILK/16000 = 713
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.SILK/24000 = 714
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.SILK/8000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.speex/16000 = 700
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.speex/32000 = 701
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.speex/8000 = 352
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.telephone-event/8000 = 1
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.ulpfec/90000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.VOICEMAIL_CHECK_URI =
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.VOICEMAIL_ENABLED = true
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.VOICEMAIL_URI =
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.VP8/90000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.VP9/90000 = 0
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.XCAP_ENABLE = false
+net.java.sip.communicator.impl.protocol.sip.acc1522053275550.XIVO_ENABLE = false
+
+net.java.sip.communicator.plugin.reconnectplugin.ATLEAST_ONE_SUCCESSFUL_CONNECTION.SIP:190@asterisk.fidoman.ru = true
