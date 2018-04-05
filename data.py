@@ -43,6 +43,7 @@ def my_url():
 def records_url():
   return os.environ["REQUEST_SCHEME"]+"://"+os.environ["HTTP_HOST"]+"/records/"
 
+log = open("/tmp/ccdata.log", "w")
 
 out = None
 
@@ -50,6 +51,7 @@ try:
  what = form.getvalue("what")
 
  # operations without auth
+ log.write(what+"\n")
 
  if what == "get_rec":
     """ send audio file by code """
@@ -109,9 +111,9 @@ try:
 
  elif what == "get_shop":
     out=[]
-    shop_lkid = form.getvalue("shop_id")
-    q = db.prepare("select * from shops where shop_eid=$1")
-    for l in q(shop_lkid):
+    shop_list = form.getvalue("shop_id").split(",")
+    q = db.prepare("select * from shops where shop_eid=ANY($1)")
+    for l in q(shop_list):
       out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
 
 
@@ -527,6 +529,13 @@ try:
 
   elif what == "list_orders":
     out = { "order_id": "-1", "order_url": "about:blank" }
+
+  elif what == "jitsiconf":
+    from sipclients import TPL_jitsi
+    print("Content-type: text/plain; charset=ascii")
+    print()
+    print(TPL_jitsi%{"ext": form.getvalue("ext"), "pw": form.getvalue("pw"), "address": socket.gethostname()})
+    exit()
 
 
 except Exception as e:
