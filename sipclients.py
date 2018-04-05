@@ -100,10 +100,36 @@ disableSessionTimer=0
 """
 
 
-def make_jitsi_conf(c, x):
-  global TPL_jitsi
-  print(TPL_jitsi%c)
-  exit()
+def make_jitsi_conf(c):
+#use props.hsql.script.default file (it must be saved just after jitsi install)
+  addition = [
+    ('net.java.sip.communicator.plugin.provisioning.METHOD', 'Manual'),
+#    ('net.java.sip.communicator.plugin.provisioning.URL', c["query_str"]+'?what=jitsiconf&user=${username}&password=${password}&os=${osname}&hw=${hwaddr}&uuid=${uuid}&hostname=${hostname}')
+    ('net.java.sip.communicator.plugin.provisioning.URL', '%(query_str)s?what=jitsiconf&ext=%(ext)s&pw=%(pw)s'%c)
+  ]
+#server must reply with properties file from template below
+
+  if os.name == "nt":
+    confpath = os.path.expandvars(r"%APPDATA%\Jitsi")
+  else:
+    confpath = os.path.expandvars(r"$HOME/.jitsi")
+
+  default_conf = os.path.join(confpath, "props.hsql.script.default")
+  actual_conf = os.path.join(confpath, "props.hsql.script")
+  default = open(default_conf).read()
+  actual = open(actual_conf, "w")
+  if default[-1]!="\n":
+    default += "\n"
+  actual.write(default)
+
+  for a in addition:
+    actual.write("INSERT INTO PROPS VALUES('%s','%s')\n"%a)
+
+  actual.close()
+
+#  global TPL_jitsi
+#  with open(x, "w") as conffile:
+#    conffile.write(TPL_jitsi%c)
 
 # sip-communicator.properties
 TPL_jitsi="""net.java.sip.communicator.impl.gui.accounts.acc1522053277238.accountIndex = 0
@@ -205,6 +231,9 @@ net.java.sip.communicator.impl.protocol.sip.acc1522053275550.XCAP_ENABLE = false
 net.java.sip.communicator.impl.protocol.sip.acc1522053275550.XIVO_ENABLE = false
 """
 
+
+
+
 # configurator functions
 #  subfunction to check possibility to configure
 #  subfunction to really configure
@@ -223,9 +252,9 @@ def conf_jitsi(c, checkonly=False):
   if checkonly:
     return True
   if os.name == "nt":
-    make_jitsi_conf(c, os.path.expandvars(r"%APPDATA%\Jitsi\sip-communicator.properties"))
+    make_jitsi_conf(c) #, os.path.expandvars(r"%APPDATA%\Jitsi\sip-communicator.properties"))
   else:
-    make_jitsi_conf(c, os.path.expandvars(r"$HOME/.jitsi/sip-communicator.properties"))
+    make_jitsi_conf(c) #, os.path.expandvars(r"$HOME/.jitsi/sip-communicator.properties"))
 
 
 conf_functions = {
