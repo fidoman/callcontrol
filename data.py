@@ -43,6 +43,7 @@ def my_url():
 def records_url():
   return os.environ["REQUEST_SCHEME"]+"://"+os.environ["HTTP_HOST"]+"/records/"
 
+log = open("/tmp/ccdata.log", "w")
 
 out = None
 
@@ -50,6 +51,7 @@ try:
  what = form.getvalue("what")
 
  # operations without auth
+ log.write(what+"\n")
 
  if what == "get_rec":
     """ send audio file by code """
@@ -76,10 +78,10 @@ try:
 
  elif what == "get_call_for_order":
     out=[]
-    params = 'order_id', 'shop_id', 'start_time'
+    params = 'order_id', 'shop_id'#, 'start_time'
     z = locals()
     [z.update({x: form.getvalue(x)}) for x in params]
-    q=db.prepare("select call_log.* from call_log, shops where shop_eid=$1 and cl_shop_phone=shop_phone and cl_order=$2")#(shop_id, order_id)
+    q=db.prepare("select * from call_log where cl_shop_lkid=$1 and cl_order=$2")#(shop_id, order_id)
 #    out.append(q.column_names)
     for l in q(shop_id, order_id):
 #      d = {}
@@ -96,10 +98,24 @@ try:
     start_time = iso8601.parse_date(start_time)
 
 #    q=db.prepare("select call_log.* from call_log, shops where shop_eid=ANY($1) and cl_shop_phone=shop_phone and cl_ring_time>$2")#(shop_id, order_id)
-    q=db.prepare("select call_log.* from call_log, shops where cl_shop_lkid=ANY($1) and cl_shop_phone=shop_phone and cl_ring_time>$2")#(shop_id, order_id)
+    q=db.prepare("select * from call_log where cl_shop_lkid=ANY($1) and cl_ring_time>$2")#(shop_id, order_id)
 #    out.append(q.column_names)
     for l in q(shop_list, start_time):
       out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
+
+ elif what == "get_tags":
+    out=[]
+    q = db.prepare("select * from tags")
+    for l in q():
+      out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
+
+ elif what == "get_shop":
+    out=[]
+    shop_list = form.getvalue("shop_id").split(",")
+    q = db.prepare("select * from shops where shop_eid=ANY($1)")
+    for l in q(shop_list):
+      out.append(dict(zip(q.column_names, [x if type(x)!=datetime else str(x) for x in l])))
+
 
  else:
   # require auth
@@ -513,6 +529,13 @@ try:
 
   elif what == "list_orders":
     out = { "order_id": "-1", "order_url": "about:blank" }
+
+  elif what == "jitsiconf":
+    from sipclients import TPL_jitsi
+    print("Content-type: text/plain; charset=ascii")
+    print()
+    print(TPL_jitsi%{"ext": form.getvalue("ext"), "pw": form.getvalue("pw"), "address": socket.gethostname()})
+    exit()
 
 
 except Exception as e:

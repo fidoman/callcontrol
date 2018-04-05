@@ -207,7 +207,11 @@ if __name__ == '__main__':
 
     update_data_in_table(db, "operators", "op_", "ext", ["name", "group", "location"], managers_cols, managers_data)
 
+#    update_data_in_table(db, "shops", "shop_",
+#                "name", ['eid', 'phone', 'script', 'level', 'manager', 'manager2', 'active', 'queue2', 'queue3'],
+#                shops_cols, shops_data)
+
     update_data_in_table(db, "shops", "shop_",
-                "name", ['eid', 'phone', 'script', 'level', 'manager', 'manager2', 'active', 'queue2', 'queue3'],
+                "name", ['eid', 'phone', 'script', 'level', 'manager', 'active', 'queue2', 'queue3'],
                 shops_cols, shops_data)
 
