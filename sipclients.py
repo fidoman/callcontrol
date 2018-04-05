@@ -116,6 +116,11 @@ def make_jitsi_conf(c):
 
   default_conf = os.path.join(confpath, "props.hsql.script.default")
   actual_conf = os.path.join(confpath, "props.hsql.script")
+  if not os.path.exists(default_conf):
+    import shutil
+    shutil.copy(actual_conf, default_conf)
+
+
   default = open(default_conf).read()
   actual = open(actual_conf, "w")
   if default[-1]!="\n":
