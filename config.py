@@ -11,6 +11,12 @@ try:
   datapath = os.path.expandvars(r"$HOME/.callcontrol")
 except:
   datapath = os.path.expandvars(r"%APPDATA%\callcontrol")
+  
+if os.path.exists(datapath) and not os.path.isdir(datapath):
+  raise Exception("config path is not directory")
+  
+if not os.path.exists(datapath):
+  os.makedirs(datapath, exist_ok=True)
 
 aconf_filepath = os.path.join(datapath, ASTERCONF)
 

@@ -37,3 +37,15 @@ Link data.py to cgi-bin folder.
 
 wget -qO - https://download.jitsi.org/jitsi-key.gpg.key | sudo apt-key add -
 echo 'deb https://download.jitsi.org stable/' > /etc/apt/sources.list.d/jitsi-stable.list
+
+
+=== History ===
+
+0.1 Первая версия, функциональность ручного обзвона и взодящих звонков
+0.2 Настройка SIP клиента делается при запуске callcontrol
+  Поддержка MicroSIP и Jitsi
+
+
+=== Планы ===
+
+Очередь исходящих звонков
