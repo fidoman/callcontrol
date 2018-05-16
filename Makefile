@@ -3,6 +3,10 @@ deb: copy
 	dpkg-deb -b debian
 	mv debian.deb callcontrol.deb
 
+ubuntu: copy
+	dpkg-deb -b ubuntu
+	mv debian.deb callcontrol.deb
+
 repo:
 	cd  /var/www/repos/apt/debian &&  reprepro includedeb stretch /home/fastery/callcontrol/callcontrol.deb
 

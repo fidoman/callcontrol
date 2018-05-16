@@ -56,7 +56,7 @@ def save(root, x):
   x[0].conf["internalcontext"] = "from-internal"
   x[0].conf["ext"] = str_ext
   x[0].conf["pw"] = str_pw
-  x[0].conf["query_str"] = q_url
+  x[0].conf["data"] = q_url
   x[0].conf["do_not_ask"] = int_dna
   x[0].conf["sipclient"] = str_sipclient
 

@@ -104,8 +104,8 @@ def make_jitsi_conf(c):
 #use props.hsql.script.default file (it must be saved just after jitsi install)
   addition = [
     ('net.java.sip.communicator.plugin.provisioning.METHOD', 'Manual'),
-#    ('net.java.sip.communicator.plugin.provisioning.URL', c["query_str"]+'?what=jitsiconf&user=${username}&password=${password}&os=${osname}&hw=${hwaddr}&uuid=${uuid}&hostname=${hostname}')
-    ('net.java.sip.communicator.plugin.provisioning.URL', '%(query_str)s?what=jitsiconf&ext=%(ext)s&pw=%(pw)s'%c)
+#    ('net.java.sip.communicator.plugin.provisioning.URL', c["data"]+'?what=jitsiconf&user=${username}&password=${password}&os=${osname}&hw=${hwaddr}&uuid=${uuid}&hostname=${hostname}')
+    ('net.java.sip.communicator.plugin.provisioning.URL', '%(data)s?what=jitsiconf&ext=%(ext)s&pw=%(pw)s'%c)
   ]
 #server must reply with properties file from template below
 

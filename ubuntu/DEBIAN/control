@@ -1,0 +1,10 @@
+Package: callcontrol
+Version: 0.1
+Maintainer: Sergey X <sergey@fidoman.ru>
+Description: client part of CallControl software
+  see https://github.com/fidoman/callcontrol
+Section: VoIP
+Priority: optional
+Architecture: amd64
+Depends: python3 (>= 3.5.0), python3-tk (>= 3.5.0), python3-pip (>= 3.5.0), jitsi, chromium-chromedriver
+
