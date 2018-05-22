@@ -79,9 +79,9 @@ git pull
 if errorlevel 1 goto fail
 
 :finish
-echo run configurator
-python c:\callcontrol\install\microsipconf.py
-if errorlevel 1 goto fail
+rem echo run configurator
+rem python c:\callcontrol\install\microsipconf.py
+rem if errorlevel 1 goto fail
 
 echo install MicroSIP
 "%~dp0MicroSIP-3.15.7.exe" /S

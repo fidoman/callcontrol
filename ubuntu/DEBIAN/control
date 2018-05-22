@@ -1,5 +1,5 @@
 Package: callcontrol
-Version: 0.2.6
+Version: 0.1
 Maintainer: Sergey X <sergey@fidoman.ru>
 Description: client part of CallControl software
   see https://github.com/fidoman/callcontrol
