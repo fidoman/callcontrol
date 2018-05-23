@@ -62,7 +62,7 @@ exit
 echo Part 1 OK
 
 echo installing python modules
-pip install asterisk-ami persist-queue selenium
+pip install asterisk-ami persist-queue selenium python-gettext
 if errorlevel 1 goto fail
 
 echo install callcontrol
@@ -80,7 +80,10 @@ if errorlevel 1 goto fail
 
 :finish
 rem echo run configurator
-rem python c:\callcontrol\install\microsipconf.py
+FOR /F "tokens=2 delims==" %%a IN ('wmic os get OSLanguage /Value') DO set OSLanguage=%%a
+if "%OSLanguage%" == "1049" setx LANG RU
+
+python c:\callcontrol\install\locales.py
 rem if errorlevel 1 goto fail
 
 echo install MicroSIP
