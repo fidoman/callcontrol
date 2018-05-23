@@ -51,7 +51,7 @@ try:
  what = form.getvalue("what")
 
  # operations without auth
- log.write(what+"\n")
+ log.write(str(what)+"\n")
 
  if what == "get_rec":
     """ send audio file by code """
