@@ -1,10 +1,13 @@
+
+Install python3 python3-pip python3-postgresql
+
 Install following python modules:
-  pip install asterisk-ami persist-queue
+  pip3 install --upgrade asterisk-ami persist-queue selenium
 
 To fetch data from google docs:
-  pip install --upgrade google-api-python-client
+  pip3 install --upgrade google-api-python-client
 
-
+Create database.json, gdocs.json, authorize host in google docs
 
 Link data.py to cgi-bin folder.
 
@@ -49,3 +52,12 @@ echo 'deb https://download.jitsi.org stable/' > /etc/apt/sources.list.d/jitsi-st
 === Планы ===
 
 Очередь исходящих звонков
+
+=== Установка сервера ===
+
+1) link data.py to cgi-bin
+2) install apache2-cgi
+3) place database.json into cgi-bin
+{ "host": "localhost", "database": "call_control", "user": "cc_data", "password": "xxxxxxxx"}
+4) create database call_control, roles cc_data, cc_populate and cdr then run cc.sql
+su - postgres -c 'psql call_control -f /opt/callcontrol/cc.sql'
