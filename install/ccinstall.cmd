@@ -81,7 +81,7 @@ if errorlevel 1 goto fail
 :finish
 rem echo run configurator
 FOR /F "tokens=2 delims==" %%a IN ('wmic os get OSLanguage /Value') DO set OSLanguage=%%a
-if "%OSLanguage%" == "1049" setx LANG RU
+if "%OSLanguage%" == "1049" setx LANG ru
 
 python c:\callcontrol\install\locales.py
 rem if errorlevel 1 goto fail
