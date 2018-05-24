@@ -93,7 +93,7 @@ def do_dial():
   dial.dial(root)
 
 def pause_queue_member(new_state=None):
-  global pause_button, is_paused, asterisk_conf
+  global pause_button, is_paused, asterisk_conf, ext_pause_text, ext_status
   if new_state is None:
     new_state = not is_paused
   action = SimpleAction(
@@ -105,6 +105,11 @@ def pause_queue_member(new_state=None):
   client.send_action(action, callback=print)
   is_paused = new_state
   pause_button.config(text=_("Unpause") if is_paused else _("Pause"))
+  ext_pause_text.set("||" if is_paused else "►")
+  ext_status.config(fg="red" if is_paused else "black")
+  #does not work
+  #ext_status.config(background = "blue")
+  #ext_status.config(disabledbackground = "red")
 
 def campaigns_window():
   pass
@@ -114,20 +119,24 @@ my_extension = StringVar()
 my_extension.set(asterisk_conf["ext"])
 extstats[my_extension.get()] = StringVar()
 
+ext_pause_text = StringVar()
+
 ext_label = Label(root, text=_("Extension:"))
 ext_label.grid(row=1, column=1)
 ext_entry = Entry(root, textvariable=my_extension, width=8, state="readonly")
 ext_entry.grid(row=1, column=2)
 ext_status = Entry(root, textvariable=extstats[my_extension.get()], width=12, state="readonly")
 ext_status.grid(row=1, column=3)
+ext_pause = Entry(root, width=1, textvariable = ext_pause_text, state="readonly")
+ext_pause.grid(row=1, column=4)
 call_button = Button(root, text=_("Dial"), command = do_dial)
-call_button.grid(row=1, column=4)
+call_button.grid(row=1, column=5)
 pause_button = Button(root, text=_("Pause"), command = pause_queue_member)
-pause_button.grid(row=1, column=5)
-
+pause_button.grid(row=1, column=6)
 # make this button blinking if there is sheduled calls that has come
 campaigns_button = Button(root, text=_("Campaigns"), command = campaigns_window)
-campaigns_button.grid(row=1, column=6)
+campaigns_button.grid(row=1, column=7)
+
 
 #add_window_button = Button(root, text="Тест", command = lambda: add_call_window("123", "45", "x", "chan"))
 #add_window_button.grid(row=2, column=1)
