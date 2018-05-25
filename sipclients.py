@@ -15,6 +15,7 @@ def make_microsip_conf(c, x):
   global TPL_microsip_ini
   with open(x, "w") as conffile:
     conffile.write(TPL_microsip_ini%c)
+  os.system("taskkill /im MicroSIP.exe")
 
 TPL_microsip_ini="""[Settings]
 accountId=1
