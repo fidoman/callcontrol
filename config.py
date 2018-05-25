@@ -27,7 +27,7 @@ if not os.path.exists(aconf_filepath):
 else:
   asterisk_conf = json.load(open(aconf_filepath))
 
-if not asterisk_conf.get("do_not_ask", None):
+if not asterisk_conf.get("do_not_ask", None) or __name__ == "__main__":
   print("reconfiguration")
   from ccconf import ask_config
   conf_upd, asterisk_conf = ask_config(asterisk_conf)
