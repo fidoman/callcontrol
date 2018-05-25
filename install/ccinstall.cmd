@@ -88,6 +88,7 @@ rem if errorlevel 1 goto fail
 
 echo install MicroSIP
 "%~dp0MicroSIP-3.16.4.exe" /S
+taskkill /f /im MicroSIP.exe
 if errorlevel 1 goto fail
 
 echo create shortcuts
