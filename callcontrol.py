@@ -13,6 +13,7 @@ from datetime import datetime, timezone, timedelta
 import urllib.parse
 import urllib.request
 import re
+import consolehider
 
 import gettext
 gettext.install('callcontrol')
@@ -83,6 +84,7 @@ def list_commands():
 
 def root_quit(ev):
   global root
+  consolehider.show()
   root.destroy()
 
 is_paused = False
@@ -147,6 +149,8 @@ campaigns_button.grid(row=1, column=7)
 #quit_button = Button(root, text="Выход", command=root.destroy)
 #quit_button.grid(row=2, column=3)
 
+consolehider.hide()
+
 root.wm_attributes('-topmost', 1)
 try:
   root.wm_attributes('-toolwindow', 1)
@@ -156,6 +160,7 @@ root.protocol("WM_DELETE_WINDOW", lambda: None)
 root.bind("<Control-Shift-Q>", root_quit)
 #root.bind("<Control-Shift-T>", lambda _: add_call_window("123", "45", "x", "chan"))
 root.bind("<Control-Shift-W>", lambda _: browserwindow.test_call())
+root.bind("<Control-Shift-C>", lambda _: consolehider.switch())
 
 
 def calculate_position(window_number): # from zero

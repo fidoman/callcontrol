@@ -24,8 +24,8 @@ def test_call():
 
   else:
     #print(dir(test_window))
-    print(test_window.get_window_position())
-    print(test_window.get_window_size())
+    #print(test_window.get_window_position())
+    #print(test_window.get_window_size())
 
     pos = test_window.get_window_position()
     size = test_window.get_window_size()
@@ -42,40 +42,44 @@ def create_window(c):
        o.add_argument("disable-infobars");
        o.add_argument("--window-size=%(w)d,%(h)d"%c);
        o.add_argument("--window-position=%(x)d,%(y)d"%c);
+       #o.add_argument("--enable-logging");
        #o.set_headless(True)
        #o.add_argument("--homepage "+url);
-       return webdriver.Chrome(chrome_options=o) #, service_log_path = os.path.join(os.environ["TEMP"], "selenium.log"))
+       return webdriver.Chrome(chrome_options=o, service_args=["--verbose", "--log-path="+os.path.join(os.environ["TEMP"], "chromedriver.log")])
+#, service_log_path = os.path.join(os.environ["TEMP"], "selenium.log"))
 
 
 def show_help(url, retry=True):
    global help_window, help_window_conf
-   print("open url", url)
+   #print("open url", url)
    if help_window:
      c = help_window_conf = read_help_window_conf()
      try:
-       print("try in existing window")
-       help_window.get(url)
+       #print("try in existing window")
+       help_window.get(url) # do it first as only .get raises exception when chrome is lost; others just time-out
        help_window.set_window_position(c["x"], c["y"])
        help_window.set_window_size(c["w"], c["h"])
-       print("done")
+       #print("done")
      except Exception as e:
-       print("error", str(e), "drop old window")
+       #print("error", str(e), "drop old window")
        help_window = None
        show_help(url, True)
 
    else:
-     print("need new window")
+     #print("need new window")
+     pass
 
 #  if help_window:
 #    print("already open", help_window.title)
 #    return
      if retry:
-       print("create new window")
+       #print("create new window")
        c = help_window_conf = read_help_window_conf()
        help_window = create_window(c)
        show_help(url, False)
      else:
-       print("cannot show help")
+       #print("cannot show help")
+       pass
 
 def update_help_window_conf():
   global help_window, help_window_conf
@@ -98,7 +102,7 @@ def update_help_window_conf():
       update = True
 
     if update:
-      print("Save help window disposition", help_window_conf)
+      #print("Save help window disposition", help_window_conf)
       save_help_window_conf(help_window_conf)
 
 
@@ -117,14 +121,15 @@ def close_help():
       help_window.close()
       help_window=None
   except:
-    print("error in close_help")
+    #print("error in close_help")
+    pass
 
 def test():
   import time
   try:
     show_help("https://www.mail.ru")
-    time.sleep(3)
-    show_help("https://www.yandex.ru")
+    time.sleep(2)
+#    show_help("https://www.yandex.ru")
 #    time.sleep(3)
 #    show_help("https://www.google.com")
 #    time.sleep(3)
@@ -133,4 +138,8 @@ def test():
     close_help()
 
 if __name__=="__main__":
+#  import win32console, win32gui
+#  mywindow = win32console.GetConsoleWindow()
+#  win32gui.ShowWindow(mywindow, 0)
   test()
+#  win32gui.ShowWindow(mywindow, 1)
