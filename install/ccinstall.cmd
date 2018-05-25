@@ -4,7 +4,7 @@ if .%1 == .elevated goto elevated
 
 set ME=%0
 echo restart %ME%...
-powershell -Command "Start-Process ""%ME%"" elevated -Verb RunAs"
+powershell -Command "Start-Process \"%ME%\" elevated -Verb RunAs"
 exit 0
 
 :elevated
@@ -86,10 +86,18 @@ if "%OSLanguage%" == "1049" setx LANG ru
 python c:\callcontrol\install\locales.py
 rem if errorlevel 1 goto fail
 
+
 echo install MicroSIP
-"%~dp0MicroSIP-3.16.4.exe" /S
-taskkill /f /im MicroSIP.exe
+rem TODO: use own .exe file
+taskkill /f /im wscript.exe
+taskkill /im MicroSIP.exe
+
+start "Install MicroSIP" /wait "%~dp0MicroSIP-3.16.4.exe" /S
 if errorlevel 1 goto fail
+timeout 2
+taskkill /im MicroSIP.exe
+taskkill /f /im MicroSIP.exe
+timeout 1
 
 echo create shortcuts
 c:\callcontrol\install\shortcuts.vbs
