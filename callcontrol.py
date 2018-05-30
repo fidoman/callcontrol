@@ -117,6 +117,8 @@ def campaigns_window():
   pass
 
 root.title("Call Control")
+#root.overrideredirect(True)
+root.resizable(False, False)
 my_extension = StringVar()
 my_extension.set(asterisk_conf["ext"])
 extstats[my_extension.get()] = StringVar()
