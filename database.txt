@@ -230,3 +230,5 @@ l_completed boolean default false
 grant select,insert,update on leads to cc_data;
 
 create unique index on operators(op_ext);
+
+alter table call_log add cl_operator_ext varchar;
