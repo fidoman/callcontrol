@@ -161,7 +161,7 @@ except:
 root.protocol("WM_DELETE_WINDOW", lambda: None)
 root.bind("<Control-Shift-Q>", root_quit)
 #root.bind("<Control-Shift-T>", lambda _: add_call_window("123", "45", "x", "chan"))
-root.bind("<Control-Shift-W>", lambda _: browserwindow.test_call())
+#root.bind("<Control-Shift-W>", lambda _: browserwindow.test_call())
 root.bind("<Control-Shift-C>", lambda _: consolehider.switch())
 
 
@@ -226,21 +226,43 @@ def show_history_details(evt, w):
     detw=Toplevel(w)
     detw.transient(w)
     x, y = w.winfo_x(), w.winfo_y()
-    x-=400
+    x-=300
     if x<0: x=0
-    y-=400
+    y-=300
     if y<0: y=0
-    detw.geometry("390x350+%d+%d"%(x,y))
+    detw.geometry("290x250+%d+%d"%(x,y))
     w.history_details_window = detw
-    t = Text(detw)
-    t.pack(fill=BOTH)
+
     for i in w.history.curselection():
       i = int(i)
-      print(w.history.get(i))
-      print(w.history_data[w.history.get(i)])
-      for k, n in w.history_keys.items():
-        print(k, w.history_data[w.history.get(i)][n])
-        t.insert(END, _(k)+": "+str(w.history_data[w.history.get(i)][n])+"\n")
+      h_rec = w.history.get(i)
+      h_data = w.history_data[h_rec]
+
+      Label(detw, text="Звонок %d (%s)"%(h_data[w.history_keys["cl_id"]], _(h_data[w.history_keys["cl_direction"]])), anchor=W).pack(fill=X)
+      Label(detw, text="Тэг: %s"%h_data[w.history_keys["tag_name"]], anchor=W).pack(fill=X)
+      Label(detw, text="Время: %s"%h_data[w.history_keys["cl_ring_time"]].split(".")[0], anchor=W).pack(fill=X)
+      Label(detw, text="Заказ: %s"%h_data[w.history_keys["cl_order"]], anchor=W).pack(fill=X)
+      Label(detw, text="Оператор: %s %s"%(h_data[w.history_keys["cl_operator_ext"]] or '', h_data[w.history_keys["cl_operator_name"]]), anchor=W).pack(fill=X)
+      Label(detw, text="%s"%h_data[w.history_keys["cl_note"]], anchor=W).pack(fill=BOTH)
+      break
+
+
+
+#    t = Text(detw)
+#    t.pack(fill=BOTH)
+ #   for i in w.history.curselection():
+#      i = int(i)
+#      h_rec = w.history.get(i)
+#      h_data = w.history_data[h_rec]
+      #print("h_rec=", h_rec, "h_data=", h_data)
+# keys:
+# tag_name cl_ring_time cl_close_time cl_id cl_operator_name cl_shop_phone cl_direction cl_tag cl_end_time cl_client_phone
+# cl_answer_time cl_rand cl_shop_lkid cl_shop_name cl_note cl_order cl_operator cl_uid cl_rec_uid cl_tagdata
+
+#      DUMP ALL:
+#      for k, n in w.history_keys.items():
+#        print(k, n, h_data[n])
+#        t.insert(END, _(k)+": "+str(h_data[n])+"\n")
 
 def set_call_window_callerid(cw, callerid):
   cw.callerid = callerid
@@ -281,7 +303,7 @@ def add_call_window(shop_info, operator, external_channel, internal_channel, uid
   cw.operator = operator # save for logging
   cw.callerid = None
 
-  cw.help_window=None
+#  cw.help_window=None -- nope - use external browser
 
   cw.ring_time = None
   cw.answer_time = None
@@ -368,14 +390,16 @@ def add_call_window(shop_info, operator, external_channel, internal_channel, uid
 
 
 def open_shop_doc(w, shop_info):
+  global bg_run_showpage
   page = shop_info[2]
   if page:
     print("Open", page)
     #os.system('start '+page)
-    try:
-      w.help_window=browserwindow.show_help(page)
-    except:
-      print("error on show_help")
+#    try:
+#      w.help_window=browserwindow.show_help(page)
+    bg_run_showpage = page
+#    except:
+#      print("error on show_help")
   else:
     print("no script page")
 #    os.system('start https://google.com')
@@ -972,16 +996,26 @@ for tag_id, tag_name in load_data("tags"):
 
 bgthread = threading.Thread(target=bg_task)
 bg_run = True
+bg_run_showpage = None
 bgthread.start()
 
 def init_help_window():
-  global bg_run
+  global bg_run, bg_run_showpage
   try:
     browserwindow.show_help("about:blank")
     print("help window have been initialized")
+    counter=0
     while bg_run:
-      browserwindow.update_help_window_conf()
-      time.sleep(5)
+      if bg_run_showpage:
+
+        browserwindow.show_help(bg_run_showpage)
+        bg_run_showpage = None
+      if counter==25:
+        browserwindow.update_help_window_conf()
+        counter=0
+      time.sleep(0.2)
+      counter+=1
+    browserwindow.close_help()
   except Exception as e:
     print(e)
 
@@ -1009,7 +1043,6 @@ scheduler.bg_run = False
 root.quit()
 
 keeper.finished.set()
-browserwindow.close_help()
 
 print("waiting threads...")
 bgthread.join()
