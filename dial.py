@@ -141,13 +141,13 @@ def dial_old(root):
 
 
 
-def update_shops_list(newval, idx, action, shops_list, shops):
+def update_shops_list(newval, idx, action, dialw):
   try:
-    shops_list.delete(0, END)
-    for s in shops:
+    dialw.slist.delete(0, END)
+    for s in dialw.shops:
       sname=s[1]+" | "+s[0]
       if sname.lower().find(newval.lower())!=-1:
-        shops_list.insert(END, sname)
+        dialw.slist.insert(END, sname)
   except:
     traceback.print_exc()
   return True
@@ -165,13 +165,32 @@ def do_call(d, f):
   print("call", d.get(), "from", f.get())
   initiate_call(f.get(), asterisk_conf['ext'], d.get())
 
+def load_shops():
+  print("Dialw: load shops")
+  shops = load_data("shops")
+  shops.sort(key=lambda x: x[0].lower())
+  return shops
+
 def dial(root):
   if root is None:
     dialw = Tk()
+    close_dialw = lambda w: w.destroy()
+    do_create = True
   else:
-    dialw = Toplevel(root)
+    try: 
+      dialw = root.dial_window
+      dialw.deiconify()
+      dialw.lift()
+      do_create = False
+    except:
+      dialw = root.dial_window = Toplevel(root)
+      do_create = True
+    close_dialw = lambda w: w.wm_withdraw()
 
-  dialw.title("Звонок клиенту")
+
+
+  if do_create:
+    dialw.title("Звонок клиенту")
 
   # enter shop:
   # client phone:
@@ -179,52 +198,61 @@ def dial(root):
   #  is it needed?
   # close window with escape; if off-focus for 2 minutes
 
-  shop_var = StringVar()
-  phone_var = StringVar()
-  order_id = None # order to work with
-  lead_id = None # call initiative identifier
+#    dialw.shop_var = StringVar()
+    dialw.phone_var = StringVar()
+    dialw.order_id = None # order to work with
+    dialw.lead_id = None # call initiative identifier
 
-  shops = load_data("shops")
-  shops.sort(key=lambda x: x[0].lower())
+    dialw.from_var = StringVar()
 
-  from_var = StringVar()
-  from_var.set("-----------")
+    sframe = Frame(dialw)
+    sscroll = Scrollbar(sframe, orient = VERTICAL)
+    dialw.slist = Listbox(sframe, yscrollcommand = sscroll.set, exportselection = 0)
+    sscroll.config(command=dialw.slist.yview)
+    sscroll.pack(side=RIGHT, fill=BOTH)
+    dialw.slist.pack(side=LEFT, fill=BOTH, expand=1)
 
-  sframe = Frame(dialw)
-  sscroll = Scrollbar(sframe, orient = VERTICAL)
-  slist = Listbox(sframe, yscrollcommand = sscroll.set, exportselection = 0)
-  sscroll.config(command=slist.yview)
-  sscroll.pack(side=RIGHT, fill=BOTH)
-  slist.pack(side=LEFT, fill=BOTH, expand=1)
+    Label(dialw, text="Клиент:").grid(row=1, column=1)
+    dialw.phone_entry = Entry(dialw, textvariable=dialw.phone_var)
+    dialw.phone_entry.grid(row=1, column=2)
+    Label(dialw, text="Магазин:").grid(row=1, column=3)
+    dialw.shop_entry = Entry(dialw, validate="key", validatecommand=(dialw.register(lambda x, y, z, t=dialw: update_shops_list(x, y, z, t)),'%P','%i','%d'))
+    dialw.shop_entry.grid(row=1, column=4, sticky=W+E)
 
-  Label(dialw, text="Клиент:").grid(row=1, column=1)
-  phone_entry = Entry(dialw, textvariable=phone_var)
-  phone_entry.grid(row=1, column=2)
-  Label(dialw, text="Магазин:").grid(row=1, column=3)
-  shop_entry = Entry(dialw, validate="key", validatecommand=(dialw.register(lambda x, y, z, t=slist, u=shops: update_shops_list(x, y, z, t, u)),'%P','%i','%d'))
-  shop_entry.grid(row=1, column=4, sticky=W+E)
+    dial_cmd = lambda d=dialw.phone_var, f=dialw.from_var: do_call(d, f)
+    dial_cmd_ev = lambda _, d=dialw.phone_var, f=dialw.from_var: do_call(d, f)
 
-  dial_cmd = lambda d=phone_var, f=from_var: do_call(d, f)
-  dial_cmd_ev = lambda _, d=phone_var, f=from_var: do_call(d, f)
+    call_button = Button(dialw, textvariable=dialw.from_var, command = dial_cmd)
+    call_button.grid(row=1, column=5)
+    call_button.config(default = ACTIVE)
 
-  call_button = Button(dialw, textvariable=from_var, command = dial_cmd)
-  call_button.grid(row=1, column=5)
-  call_button.config(default = ACTIVE)
+    dialw.slist.bind("<ButtonRelease-1>", lambda x, t = dialw.from_var: shop_click(x, t))
+    dialw.slist.bind("<Double-Button-1>", dial_cmd_ev)
 
-  slist.bind("<ButtonRelease-1>", lambda x, t = from_var: shop_click(x, t))
-  slist.bind("<Double-Button-1>", dial_cmd_ev)
+    sframe.grid(row=2, column=1, columnspan=5, sticky="NEWS")
 
-  sframe.grid(row=2, column=1, columnspan=5, sticky="NEWS")
+    dialw.grid_rowconfigure(2, weight=1)
+    dialw.grid_columnconfigure(4, weight=1)
 
-  dialw.grid_rowconfigure(2, weight=1)
-  dialw.grid_columnconfigure(4, weight=1)
+    dialw.bind("<Return>", dial_cmd_ev)
+    dialw.bind("<Key>", fix_rus)
+    dialw.bind("<Escape>", lambda _, x=dialw: close_dialw(x))
+    dialw.protocol("WM_DELETE_WINDOW", lambda x=dialw: close_dialw(x))
 
-  phone_entry.focus()
-  update_shops_list("", None, None, slist, shops)
+  # always
+#  dialw.shop_var.set("")
+  dialw.shop_entry.delete(0, END) # no var - use only for filtering
+  dialw.phone_var.set("")
+  dialw.order_id = None
+  dialw.lead_id = None
 
-  dialw.bind("<Return>", dial_cmd_ev)
-  dialw.bind("<Key>", fix_rus)
-  dialw.bind("<Escape>", lambda _, x=dialw: x.destroy())
+  dialw.from_var.set("-----------")
+
+  dialw.phone_entry.focus()
+
+  dialw.shops = load_shops()
+  update_shops_list(dialw.shop_entry.get(), None, None, dialw)
+
 
   if not root:
     dialw.mainloop()
