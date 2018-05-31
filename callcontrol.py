@@ -246,6 +246,7 @@ def show_history_details(evt, w):
       Label(detw, text="%s"%h_data[w.history_keys["cl_note"]], anchor=W).pack(fill=BOTH)
       break
 
+    detw.bind("<Escape>", lambda _, x=detw: x.destroy())
 
 
 #    t = Text(detw)
@@ -377,6 +378,8 @@ def add_call_window(shop_info, operator, external_channel, internal_channel, uid
 
   history.bind("<Double-Button-1>", lambda x, parent=cw: show_history_details(x, parent))
   cw.history_details_window = None
+
+  history.bind("<Escape>", lambda x, parent=cw: cw.history_details_window.destroy() if cw.history_details_window else None)
 
   hframe.grid(row=7, column=0, columnspan=4, sticky=W+E)
 
@@ -1004,17 +1007,24 @@ def init_help_window():
   try:
     browserwindow.show_help("about:blank")
     print("help window have been initialized")
-    counter=0
+#    counter=0
     while bg_run:
       if bg_run_showpage:
-
-        browserwindow.show_help(bg_run_showpage)
+        print("Open help page:", bg_run_showpage)
+        try:
+          browserwindow.show_help(bg_run_showpage)
+          browserwindow.update_help_window_conf() # save position to file
+        except:
+          pass
         bg_run_showpage = None
-      if counter==25:
-        browserwindow.update_help_window_conf()
-        counter=0
+#      if counter==25:
+#        try:
+#        except:
+#          pass
+#        counter=0
       time.sleep(0.2)
-      counter+=1
+#      counter+=1
+    print("Closing help window")
     browserwindow.close_help()
   except Exception as e:
     print(e)
