@@ -194,10 +194,12 @@ def hangup(channel):
   print(stat)
 
 
-def park(channel):
+def park(channel, tchannel):
+  global calls
   action = SimpleAction(
     'Park',
-    Channel=channel
+    Channel=channel,
+    TimeoutChannel=calls[tchannel]["channel"]
   )
   print("Park", channel)
   stat = client.send_action(action)
@@ -331,7 +333,7 @@ def add_call_window(shop_info, operator, external_channel, internal_channel, uid
   hangup_b = Button(cw, text=_('hangup'), command=lambda ch=internal_channel: hangup(ch))
   hangup_b.grid(row=0,column=2)
 
-  park_b = Button(cw, text=_('park'), command=lambda ch=internal_channel: park(ch))
+  park_b = Button(cw, text=_('park'), command=lambda ch=external_channel, tch=internal_channel: park(ch, tch))
   park_b.grid(row=0,column=3)
 
   transf_b = Button(cw, text=_('transfer'), command=lambda ch=internal_channel: transfer_window(ch))
@@ -599,6 +601,10 @@ bridges = {} # asterisk 13 BridgeUniqueid -> [member]
 #logf = open("events3.log", "w")
 logf = None
 
+def print_ev(e):
+  for k in e.keys:
+    print("  %s: %s"%(k, e.keys[k]))
+
 def event_listener(event,**kwargs):
   try:
     global calls, myext, state
@@ -630,7 +636,7 @@ def event_listener(event,**kwargs):
 
 
     elif event.name=="Dial" or event.name=="DialBegin":
-      print(event.keys)
+      #print(event.keys)
       dial = event.keys.get("Dialstring") or event.keys.get("DialString")
       callerchan = event.keys.get("UniqueID") or event.keys.get("Uniqueid") # get info for calling line here
       calledchan = event.keys.get("DestUniqueID") or event.keys.get("DestUniqueid") # attach window here
@@ -877,15 +883,18 @@ def event_listener(event,**kwargs):
 
     elif event.name=="BridgeCreate":
       buid = event.keys["BridgeUniqueid"]
+      print("New bridge:", buid)
       bridges[buid] = [{"type": event.keys["BridgeType"]}, set()] # parameters, members
 
     elif event.name=="BridgeDestroy":
       buid = event.keys["BridgeUniqueid"]
+      print("Drop bridge:", buid)
       del bridges[buid]
 
     elif event.name=="BridgeEnter":
       buid = event.keys["BridgeUniqueid"]
       uid = event.keys["Uniqueid"]
+      print("Bridge", buid, "gets", uid)
       bridges[buid][1].add(uid)
 
       changes = False
@@ -907,6 +916,7 @@ def event_listener(event,**kwargs):
     elif event.name=="BridgeLeave":
       buid = event.keys["BridgeUniqueid"]
       uid = event.keys["Uniqueid"]
+      print("Bridge", buid, "drops", uid)
       bridges[buid][1].remove(uid)
 #      print(event.keys)
 
@@ -934,24 +944,32 @@ def event_listener(event,**kwargs):
 
 
     elif event.name=="ExtensionStatus": # Exten Context Hint Status
-      print(event.keys)
+      #print(event.keys)
       if event.keys["Exten"] not in extstats:
         extstats[event.keys["Exten"]] = StringVar()
       v = extstats[event.keys["Exten"]]
       v.set(text_status(event.keys["Status"]))
       print(event.keys["Exten"], "->", v.get())
 
-    elif event.name=="Join":
-      print(event.keys)
+#    elif event.name=="Join":
+#      print(event.keys)
 
-    elif event.name=="Leave":
-      print(event.keys)
+#    elif event.name=="Leave":
+#      print(event.keys)
 
 #    elif event.name=="QueueMemberStatus":
 #      print(event.keys)
+#    elif event.name=="QueueMemberPause":
+#      print_ev(event)
 
-    elif event.name=="QueueCallerAbandon":
-      print(event.keys)
+#    elif event.name=="QueueCallerAbandon":
+#      print(event.keys)
+
+    elif event.name=="ParkedCall":
+      print_ev(event)
+
+#    else:
+#      print(event.keys)
 
 
   except:
