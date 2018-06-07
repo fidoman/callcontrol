@@ -15,13 +15,14 @@ def run_scheduler():
   # take ongoing
   # notify operator
   while bg_run:
-    print("fetching new lead")
-    print("check if we should call")
-    print("notify operator")
-    print("locking if we call")
-    print("calling")
-    print("release will be done by server if new tag will arrive")
+#    print("fetching new lead")
+#    print("check if we should call")
+#    print("notify operator")
+#    print("locking if we call")
+#    print("calling")
+#    print("release will be done by server if new tag will arrive")
+    pass
 
-    time.sleep(5)
+    time.sleep(2)
 
 # TODO: search stale locks

@@ -160,7 +160,7 @@ except:
   pass
 root.protocol("WM_DELETE_WINDOW", lambda: None)
 root.bind("<Control-Shift-Q>", root_quit)
-#root.bind("<Control-Shift-T>", lambda _: add_call_window("123", "45", "x", "chan"))
+root.bind("<Control-Shift-T>", lambda _: add_call_window(["Тест", "+70000000000", "x3", "x4","x5","x6"], "op", "ext.chan", "int.chan", "uid"))
 #root.bind("<Control-Shift-W>", lambda _: browserwindow.test_call())
 root.bind("<Control-Shift-C>", lambda _: consolehider.switch())
 
@@ -194,6 +194,16 @@ def hangup(channel):
   print(stat)
 
 
+def park(channel, tchannel):
+  global calls
+  action = SimpleAction(
+    'Park',
+    Channel=channel,
+    TimeoutChannel=calls[tchannel]["channel"]
+  )
+  print("Park", channel)
+  stat = client.send_action(action)
+  print(stat)
 
 
 
@@ -323,22 +333,25 @@ def add_call_window(shop_info, operator, external_channel, internal_channel, uid
   hangup_b = Button(cw, text=_('hangup'), command=lambda ch=internal_channel: hangup(ch))
   hangup_b.grid(row=0,column=2)
 
+  park_b = Button(cw, text=_('park'), command=lambda ch=external_channel, tch=internal_channel: park(ch, tch))
+  park_b.grid(row=0,column=3)
+
   transf_b = Button(cw, text=_('transfer'), command=lambda ch=internal_channel: transfer_window(ch))
-  transf_b.grid(row=0,column=3)
+  transf_b.grid(row=0,column=4)
 
   cw.client = StringVar(value='')
 
   k = Label(cw, text=_('client:'))
   k.grid(row=1, column=0)
   k = Entry(cw, textvariable=cw.client, width=16)
-  k.grid(row=1, column=1)
+  k.grid(row=1, column=1, columnspan=2)
 
   cw.order = StringVar()
 
   k = Label(cw, text=_('order no:'))
-  k.grid(row=1, column=2)
-  k = Entry(cw, textvariable=cw.order, width=10)
   k.grid(row=1, column=3)
+  k = Entry(cw, textvariable=cw.order, width=10)
+  k.grid(row=1, column=4)
 
 #  k = Button(cw, text='Создать', command=lambda: call_window_new_order(cw))
 #  k.grid(row=2, column=2)
@@ -350,20 +363,20 @@ def add_call_window(shop_info, operator, external_channel, internal_channel, uid
   k = Label(cw, text=_('shop:'))
   k.grid(row=2, column=0)
   k = Label(cw, textvariable=cw.shopname)
-  k.grid(row=2, column=1)
+  k.grid(row=2, column=1, columnspan=2)
 
   cw.tag = StringVar()
 
   k = Label(cw, text=_("tag"))
   k.grid(row=4,column=0)
   k = OptionMenu(cw, cw.tag, *call_tags)
-  k.grid(row=4,column=1, columnspan=3, sticky=W)
+  k.grid(row=4,column=1, columnspan=4, sticky=W)
 
 
   k = Label(cw, text=_("remark"))
   k.grid(row=5,column=0)
   cw.note = Text(cw, height=3, width=24)
-  cw.note.grid(row=5,column=1, columnspan=3)
+  cw.note.grid(row=5,column=1, columnspan=4)
 
   close_btn = Button(cw, text=_("finished"), command = lambda: close_call_window(cw))
   close_btn.grid(row=6,column=0)
@@ -381,7 +394,7 @@ def add_call_window(shop_info, operator, external_channel, internal_channel, uid
 
   history.bind("<Escape>", lambda x, parent=cw: cw.history_details_window.destroy() if cw.history_details_window else None)
 
-  hframe.grid(row=7, column=0, columnspan=4, sticky=W+E)
+  hframe.grid(row=7, column=0, columnspan=5, sticky=W+E)
 
   print("Positioning retry at:", x, y)
   cw.geometry('%dx%d+%d+%d'%(window_w, window_h, x, y))
@@ -588,6 +601,10 @@ bridges = {} # asterisk 13 BridgeUniqueid -> [member]
 #logf = open("events3.log", "w")
 logf = None
 
+def print_ev(e):
+  for k in e.keys:
+    print("  %s: %s"%(k, e.keys[k]))
+
 def event_listener(event,**kwargs):
   try:
     global calls, myext, state
@@ -619,7 +636,7 @@ def event_listener(event,**kwargs):
 
 
     elif event.name=="Dial" or event.name=="DialBegin":
-      print(event.keys)
+      #print(event.keys)
       dial = event.keys.get("Dialstring") or event.keys.get("DialString")
       callerchan = event.keys.get("UniqueID") or event.keys.get("Uniqueid") # get info for calling line here
       calledchan = event.keys.get("DestUniqueID") or event.keys.get("DestUniqueid") # attach window here
@@ -866,15 +883,18 @@ def event_listener(event,**kwargs):
 
     elif event.name=="BridgeCreate":
       buid = event.keys["BridgeUniqueid"]
+      print("New bridge:", buid)
       bridges[buid] = [{"type": event.keys["BridgeType"]}, set()] # parameters, members
 
     elif event.name=="BridgeDestroy":
       buid = event.keys["BridgeUniqueid"]
+      print("Drop bridge:", buid)
       del bridges[buid]
 
     elif event.name=="BridgeEnter":
       buid = event.keys["BridgeUniqueid"]
       uid = event.keys["Uniqueid"]
+      print("Bridge", buid, "gets", uid)
       bridges[buid][1].add(uid)
 
       changes = False
@@ -896,6 +916,7 @@ def event_listener(event,**kwargs):
     elif event.name=="BridgeLeave":
       buid = event.keys["BridgeUniqueid"]
       uid = event.keys["Uniqueid"]
+      print("Bridge", buid, "drops", uid)
       bridges[buid][1].remove(uid)
 #      print(event.keys)
 
@@ -923,24 +944,32 @@ def event_listener(event,**kwargs):
 
 
     elif event.name=="ExtensionStatus": # Exten Context Hint Status
-      print(event.keys)
+      #print(event.keys)
       if event.keys["Exten"] not in extstats:
         extstats[event.keys["Exten"]] = StringVar()
       v = extstats[event.keys["Exten"]]
       v.set(text_status(event.keys["Status"]))
       print(event.keys["Exten"], "->", v.get())
 
-    elif event.name=="Join":
-      print(event.keys)
+#    elif event.name=="Join":
+#      print(event.keys)
 
-    elif event.name=="Leave":
-      print(event.keys)
+#    elif event.name=="Leave":
+#      print(event.keys)
 
 #    elif event.name=="QueueMemberStatus":
 #      print(event.keys)
+#    elif event.name=="QueueMemberPause":
+#      print_ev(event)
 
-    elif event.name=="QueueCallerAbandon":
-      print(event.keys)
+#    elif event.name=="QueueCallerAbandon":
+#      print(event.keys)
+
+    elif event.name=="ParkedCall":
+      print_ev(event)
+
+#    else:
+#      print(event.keys)
 
 
   except:
@@ -1058,3 +1087,4 @@ print("waiting threads...")
 bgthread.join()
 #bg2.join() - can hang
 bg_sched.join()
+

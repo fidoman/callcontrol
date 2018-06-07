@@ -123,3 +123,6 @@ msgstr "направление"
 
 msgid "cl_eid"
 msgstr "id магазина в ЛК"
+
+msgid "park"
+msgstr "Парковка"
