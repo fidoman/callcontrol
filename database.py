@@ -144,7 +144,7 @@ host=%(prov_host)s
 
   elif sys.argv[1]=="internal":
     print("; internal extensions")
-    TPL="""exten => %(ext)s,1,Dial(SIP/%(ext)s,,To)
+    TPL="""exten => %(ext)s,1,Dial(SIP/%(ext)s,,ti)
 exten = %(ext)s,hint,SIP/%(ext)s"""
     for (n,) in db.prepare("select ext_n from extensions order by ext_n"):
       print(TPL%{"ext": n})
@@ -178,7 +178,7 @@ exten => %(prov_ext)s,n,Hangup
     def mk_dial(dest, pri, exts, timeout):
       if exts:
         dial = "&".join(["SIP/%s"%x for x in exts if x])
-        return "exten => %s,%s,Dial(%s,%d,o)\n"%(dest, pri, dial, timeout)
+        return "exten => %s,%s,Dial(%s,%d,ti)\n"%(dest, pri, dial, timeout)
       return ''
 
     def mk_queue(dest, pri, qname, timeout, is_first):
