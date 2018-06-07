@@ -45,7 +45,8 @@ def create_window(c):
        #o.add_argument("--enable-logging");
        #o.set_headless(True)
        #o.add_argument("--homepage "+url);
-       return webdriver.Chrome(chrome_options=o, service_args=["--verbose", "--log-path="+os.path.join(os.environ["TEMP"], "chromedriver.log")])
+       return webdriver.Chrome(chrome_options=o)
+#, service_args=["--verbose", "--log-path="+os.path.join(os.environ["TEMP"], "chromedriver.log")])
 #, service_log_path = os.path.join(os.environ["TEMP"], "selenium.log"))
 
 
@@ -57,8 +58,9 @@ def show_help(url, retry=True):
      try:
        #print("try in existing window")
        help_window.get(url) # do it first as only .get raises exception when chrome is lost; others just time-out
-       help_window.set_window_position(c["x"], c["y"])
-       help_window.set_window_size(c["w"], c["h"])
+       update_help_window_conf()
+#       help_window.set_window_position(c["x"], c["y"])
+#       help_window.set_window_size(c["w"], c["h"])
        #print("done")
      except Exception as e:
        #print("error", str(e), "drop old window")
@@ -118,6 +120,7 @@ def close_help():
   global help_window
   try:
     if help_window:
+      update_help_window_conf()
       help_window.close()
       help_window=None
   except:
