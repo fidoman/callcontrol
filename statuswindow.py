@@ -220,8 +220,8 @@ def status_window_operation(mode, root, args):
   client.add_event_listener(lambda event, s=extstats, **kwargs: status_updater(s, event, **kwargs))
   if mode=="transfer":
     # args is channel
-    commands = [("TR", cmd_tr, (client, args, asterisk_conf["internalcontext"])),
-		("AT", cmd_at, (client, args, asterisk_conf["internalcontext"]))]
+    commands = [("TR", cmd_tr, (client, args, asterisk_conf["internalcontext"]))] #,
+#		("AT", cmd_at, (client, args, asterisk_conf["internalcontext"]))]
     ch = args
     client.add_event_listener(lambda event, w=root, ch=ch, **kwargs: hangup_closer(event, w, ch, **kwargs))
   elif mode=="control":
