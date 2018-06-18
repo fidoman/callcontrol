@@ -675,7 +675,15 @@ def event_listener(event,**kwargs):
           print("call to sipout")
           external_channel = calledchan
           internal_channel = callerchan
-          int_ext = calls[callerchan]["destination"]
+          callerid = calls[callerchan]["callerid"]
+          if len(callerid)<=5: # consider as internal extension
+            # plain call
+            int_ext = callerid # may use chan here, but then unsip it
+            # also can get external by parsing of destination
+          else:
+            # originated call
+            int_ext = calls[callerchan]["destination"]
+
           external = dial.split("/",1)[1]
           # requre that all sipout channel are named as sipoutNNN
           shop_sipout_ext = dial.split("/",1)[0][len("sipout"):]
