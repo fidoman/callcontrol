@@ -10,6 +10,20 @@
 # 1) connect to asterisk AMI
 # 2) accept connection from operator software
 #    minimum delay on requests
+
+# collect messages for online extensions
+# drop if count more than
+MAX_MESSAGES=1000
+
+# queues for extensions
+# queues for calls
+# subscriptions for extensions
+# subscriptions for calls
+# each message must be copied to all subscriptions
+# queue for each subscription
+# 1) put message
+# 2) enable semaphore
+
 import time
 import socket
 
@@ -75,6 +89,13 @@ def disc(cl, resp):
 # if timed out, send Ping
 # if loop not returned (hang in AMI module), restart it
 
+def servicer_thread():
+  # communication with client
+  pass
+
+def listener_thread():
+  # accept client connection and start dialog
+  pass
 
 def resp(x):
   print("callback")
