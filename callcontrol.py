@@ -657,6 +657,7 @@ def event_listener(event,**kwargs):
 
         make_sticky = False
         direction = None
+        orderno = None
         if chan.startswith("SIP/sipout"):
           print("call from sipout")
           shop_sipout_ext = calls[callerchan]["destination"]
@@ -680,6 +681,11 @@ def event_listener(event,**kwargs):
             # plain call
             int_ext = callerid # may use chan here, but then unsip it
             # also can get external by parsing of destination
+            longdest = calls[callerchan]["destination"]
+            ll = longdest.split("##")
+            if len(ll)>=3:
+              orderno=ll[2]
+              print("Order no:", orderno)
           else:
             # originated call
             int_ext = calls[callerchan]["destination"]
@@ -755,6 +761,10 @@ def event_listener(event,**kwargs):
 
             if make_sticky:
               cw.sticky = True
+
+            if orderno:
+              cw.order.set(orderno)
+
               # open shop script instantly on operator-initiated calls
             #open help instantly, it must be rady before call is taken
             open_shop_doc(cw, cw.shop_info)
