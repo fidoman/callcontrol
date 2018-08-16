@@ -195,6 +195,7 @@ try:
 
       note = form.getvalue("note")
       order = form.getvalue("order")
+      webloop = form.getvalue("webloop")
 
       close_time = form.getvalue("close_time")
       if close_time == 'None':
@@ -216,10 +217,10 @@ try:
       db.prepare("insert into call_log ("
 		"cl_rand, cl_tag, cl_operator, cl_operator_name, cl_rec_uid, cl_client_phone, cl_shop_phone, "
 		"cl_shop_name, cl_ring_time, cl_answer_time, cl_end_time, cl_close_time, cl_note, cl_order, cl_uid, "
-		"cl_direction, cl_shop_lkid, cl_operator_ext) "
-		"values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18) ")\
+		"cl_direction, cl_shop_lkid, cl_operator_ext, cl_webloop) "
+		"values ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19) ")\
 	(rand, tag_id, op_id, op_name, rec_uid, client_phone, shop_phone, shop_name, ring_time, answer_time,
-	end_time, close_time, note, order, uid, direction, shop_lkid, operator)
+	end_time, close_time, note, order, uid, direction, shop_lkid, operator, webloop)
 
 
 #      db.prepare("insert into call_log ("
