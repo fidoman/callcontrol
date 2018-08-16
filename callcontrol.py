@@ -347,6 +347,7 @@ def add_call_window(shop_info, operator, external_channel, internal_channel, uid
   k.grid(row=1, column=1, columnspan=2)
 
   cw.order = StringVar()
+  cw.webloop = StringVar()
 
   k = Label(cw, text=_('order no:'))
   k.grid(row=1, column=3)
@@ -461,6 +462,7 @@ def close_call_window(window, close_unanswered = False):
         "note": window.note.get(1.0, END),
         "close_time": datetime.utcnow(),
         "order": window.order.get(),
+        "webloop": window.webloop.get(),
 	"uid": window.uid,
         "direction": window.direction,
         "shop_lkid": window.shop_info[5]
@@ -658,6 +660,7 @@ def event_listener(event,**kwargs):
         make_sticky = False
         direction = None
         orderno = None
+        webloop = None
         if chan.startswith("SIP/sipout"):
           print("call from sipout")
           shop_sipout_ext = calls[callerchan]["destination"]
@@ -683,9 +686,14 @@ def event_listener(event,**kwargs):
             # also can get external by parsing of destination
             longdest = calls[callerchan]["destination"]
             ll = longdest.split("##")
-            if len(ll)>=3:
-              orderno=ll[2]
-              print("Order no:", orderno)
+            for x in ll[2:]: # really - orderno and webloop
+              if x.isdigit():
+                orderno=x
+                print("Order no:", orderno)
+              elif x[0]=="*" and x[1:].isdigit():
+                webloop=x[1:]
+                print("WebLoop:", webloop)
+
           else:
             # originated call
             int_ext = calls[callerchan]["destination"]
@@ -764,6 +772,9 @@ def event_listener(event,**kwargs):
 
             if orderno:
               cw.order.set(orderno)
+
+            if webloop:
+              cw.webloop.set(webloop)
 
               # open shop script instantly on operator-initiated calls
             #open help instantly, it must be rady before call is taken
