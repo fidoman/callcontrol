@@ -5,6 +5,7 @@ import os
 import json
 from itertools import count
 import urllib.request
+import traceback
 
 def mkquery(q, what):
     print("mkquery", what)
@@ -16,7 +17,7 @@ def mkquery(q, what):
       args += q["add-args"]
 
 
-    print(args)
+    print("quary args:", args)
     if args:
       url += "?" + "&".join([ak+"="+av for ak, av in args])
 
@@ -24,9 +25,12 @@ def mkquery(q, what):
     return url
 
 def fetch_all():
+  all_data = {}
+
   queries=json.load(open('fstr.json'))
 
   op_q = mkquery(queries, "operators")
+  all_data["managers"] = []
 #url=queries["shop_id"]%{"shop_name": urllib.parse.quote(shop_name)}
   try:
         resp = urllib.request.urlopen(op_q)
@@ -38,13 +42,25 @@ def fetch_all():
           #print(data["items"])
           for d in data["items"]:
             op_phone = d["internal_number"]
+            print("operator %-32s %3d %3d %1d"%(d["fio"].strip(), d["id"], op_phone, d["group_id"]))
             if op_phone:
-              print("%-30s %d"%(d["fio"].strip(), op_phone), d["group_id"])
+#               print(d)
+              all_data["managers"].append({
+			"ext": d["internal_number"],
+			"name": d["fio"],
+			"location": d["location"],
+			"group": d["group_id"]})
   except Exception as e:
-        import traceback
-        traceback.print_exc(e)
         print("error", e)
+        traceback.print_exc(e)
 
+
+  all_data["levels"] = []
+  all_data["shops"] = []
+
+  tariffs = {}
+
+  # shop fields: phone name eid active level script manager queue2 queue3
 
   shop_q = mkquery(queries, "shops")
   try:
@@ -55,48 +71,51 @@ def fetch_all():
         else:
           data = json.loads(resp.read().decode("utf-8"))
            
-          print(data.keys())
-          for d in data["items"]:
-            print(d)
-#            op_phone = d["internal_number"]
-#            if op_phone:
-#              print("%-30s %d"%(d["fio"].strip(), op_phone), d["group_id"])
+          #print(data.keys())
+          for d in data["shops"]:
+            if not d["phones"]:
+              print("shop", d["name"], "does not have any phone numbers")
+              continue
+
+            for k in d.keys():
+               print(k, d[k])
+            print()
+
+            shop_rec = {}
+            shop_rec["name"] = d["name"]
+            shop_rec["phone"] = d["phones"][0]["number"] 
+            if len(d["phones"])>1:
+               print("warning!!! only first phone number is used")
+            shop_rec["eid"] = d["id"]
+            shop_rec["active"] = d["is_active"]
+
+            opts = d.get("options", {})
+            managers = d.get("managers")
+            tariff = d.get("tariff")
+            if tariff: # id name worktime
+              if tariff["id"] not in tariffs:
+                tariffs["id"] = tariff
+
+            shop_rec["level"] = tariff["name"] if tariff else None
+            shop_rec["script"] = opts.get("work_scheme_url")
+            shop_rec["manager"] = managers[0]["fio"] if managers else None
+            if managers and len(d["managers"])>1:
+               print("warning!!! only first manager is added to queue")
+            shop_rec["queue2"] = opts.get("second_queue")
+            shop_rec["queue3"] = opts.get("third_queue")
+
+            all_data["shops"].append(shop_rec)
+
+
+        for t in tariffs.values():
+          print("used level:", t)
+          all_data["levels"].append(
+            {"name": t["name"], "worktime": t["work_time"]}
+          )
+
   except Exception as e:
-        import traceback
         traceback.print_exc(e)
         print("error", e)
-
-  exit()
-
-
-  all_data = {}
-  for what, doc in doc_list.items():
-    doc_id = doc["id"]
-    doc_columns = doc["columns"]
-    doc_range = doc["range"]
-    data = fetch_doc(doc_id, doc_range)
-    header = None
-    while not header: # skip empty lines
-      header, data = data[0], data[1:]
-    print(what, doc_columns, header)
-    coltext_n = {} # make map header text -> col_n
-    for n, h in zip(count(0), header):
-      print(n, h)
-      coltext_n[h] = n
-
-    col_n = {}
-    for colname, coltext in doc_columns.items():
-      if coltext in coltext_n:
-        col_n[colname] = coltext_n[coltext] # or error - no needed column
-      else:
-        raise Exception("Document %s does not have column %s"%(doc_id, coltext))
-
-
-#    print(col_n)
-#    for data1 in data:
-#      print(data1)
-
-    all_data[what]=(col_n, data)
 
   return all_data
 
@@ -183,6 +202,11 @@ def update_data_in_table(db, table, column_prefix, master_field, data_fields, da
 if __name__ == '__main__':
     all_data = fetch_all()
     print("sources:", all_data.keys())
+
+    with open("fstrfetch-alldata.json", "w") as dump:
+      json.dump(all_data, dump)
+
+    exit()
 
     level_cols, levels_data = all_data['levels']
     managers_cols, managers_data = all_data['managers']

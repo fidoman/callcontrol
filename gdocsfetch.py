@@ -193,6 +193,9 @@ def update_data_in_table(db, table, column_prefix, master_field, data_fields, da
 
 if __name__ == '__main__':
     all_data = fetch_all()
+    with open("gdocsfetch-alldata.json", "w") as dump:
+      json.dump(all_data, dump)
+
     print("sources:", all_data.keys())
 
     level_cols, levels_data = all_data['levels']
