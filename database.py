@@ -37,7 +37,8 @@ def gen_pw(l):
 def load_operators():
     ops = {}
     for op_name, op_ext in db.prepare("select op_name, op_ext from operators"):
-      ops[op_name] = op_ext
+      if op_name:
+        ops[op_name] = op_ext
     return ops
 
 def l1_queue(op1, op2):
