@@ -163,12 +163,12 @@ exten = %(ext)s,hint,SIP/%(ext)s"""
     ops = load_operators()
 
     TPL="""
-exten => %(prov_ext)s,1,System(/usr/local/bin/log_call.py e:${EXTEN} u:${UNIQUEID} cid:${CALLERID(num)} dialp:${DIALEDPEERNUMBER} dnid:${DNID})
+exten => %(prov_ext)s,1,System(/usr/local/bin/log_call.py h:%(sip_host)s e:${EXTEN} u:${UNIQUEID} cid:${CALLERID(num)} dialp:${DIALEDPEERNUMBER} dnid:${DNID})
 exten => %(prov_ext)s,n,Set(CALLERID(num)=+${CALLERID(num)})
 exten => %(prov_ext)s,n,Monitor(wav,callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN},m)
 exten => %(prov_ext)s,n,Set(CDR(recordingfile)=callin-%(prov_ext)s-${CHANNEL}--${UNIQUEID}--${CALLERID(num)}--${EXTEN})
 exten => %(prov_ext)s,n,Set(CALLERID(name)=%(destiname)s)
-exten => %(prov_ext)s,n,Set(CHANNEL(hangup_handler_push)=inbound-hangup,s,1(${CALLERID(num)},${EXTEN},${HANGUPCAUSE},${UNIQUEID}))
+exten => %(prov_ext)s,n,Set(CHANNEL(hangup_handler_push)=inbound-hangup,s,1(${CALLERID(num)},%(sip_host)s,${EXTEN},${HANGUPCAUSE},${UNIQUEID}))
 %(dial)s
 exten => %(prov_ext)s,n,Voicemail(%(prov_ext)s@missed)
 ;exten => %(prov_ext)s,n,Set(CHANNEL(hangup_handler_pop)=)
@@ -226,7 +226,7 @@ exten => %(prov_ext)s,n,Hangup
 
     processed_phones = {}
     # get extensions
-    for shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, worktime in db.prepare("select shop_name, shop_phone, shop_active, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, l_worktime from shops, sip_users, levels where su_phone=shop_phone and l_name=shop_level order by su_myext"):
+    for shop_name, shop_phone, shop_active, su_host, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, worktime in db.prepare("select shop_name, shop_phone, shop_active, su_host, su_myext, shop_manager, shop_manager2, shop_queue2, shop_queue3, l_worktime from shops, sip_users, levels where su_phone=shop_phone and l_name=shop_level order by su_myext"):
       if shop_phone in processed_phones:
         print("; duplicate phone", shop_phone, shop_name, processed_phones[shop_phone])
         continue
@@ -310,7 +310,7 @@ exten => %(ext)s,n,Morsecode(account is locked)
 
 #        print(phases); exit()
 
-      print(TPL%{'prov_ext':su_myext, 'destiname':shop_name, 'dial': dial})
+      print(TPL%{'prov_ext':su_myext, 'destiname':shop_name, 'dial': dial, 'sip_host': su_host})
 
   elif sys.argv[1]=="queues":
     # make queues:
