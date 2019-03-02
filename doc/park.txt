@@ -1,0 +1,24 @@
+Парковка вызова
+Результат:
+
+ParkedCall
+  Privilege: call,all
+  ParkeeChannel: SIP/sipout21-00000442
+  ParkeeChannelState: 6
+  ParkeeChannelStateDesc: Up
+  ParkeeCallerIDNum: +79015363244
+  ParkeeCallerIDName: МАГАЗИН1
+  ParkeeConnectedLineNum: <unknown>
+  ParkeeConnectedLineName: <unknown>
+  ParkeeLanguage: en
+  ParkeeAccountCode:
+  ParkeeContext: trunkinbound
+  ParkeeExten: 22
+  ParkeePriority: 11
+  ParkeeUniqueid: 1551523708.3591
+  ParkeeLinkedid: 1551523708.3591
+  ParkerDialString: SIP/191
+  Parkinglot: default
+  ParkingSpace: 701
+  ParkingTimeout: 45
+  ParkingDuration: 0
