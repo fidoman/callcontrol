@@ -215,6 +215,6 @@ if __name__ == '__main__':
 #                shops_cols, shops_data)
 
     update_data_in_table(db, "shops", "shop_",
-                "name", ['eid', 'phone', 'script', 'level', 'manager', 'active', 'queue2', 'queue3'],
+                "name", ['eid', 'phone', 'script', 'level', 'manager', 'active', 'queue2', 'queue3', 'notify_email'],
                 shops_cols, shops_data)
 

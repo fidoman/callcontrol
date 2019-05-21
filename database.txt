@@ -88,6 +88,7 @@ shop_active varchar,
 shop_queue2 varchar,
 shop_queue3 varchar,
 shop_level varchar,
+shop_notify_email varchar,
 lk_id integer
 );
 grant select,insert,update  on shops to cc_populate;
