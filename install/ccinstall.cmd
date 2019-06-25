@@ -20,7 +20,7 @@ if not errorlevel 1 goto python_ok
 
 if exist "%~dp0python-3.6.2.exe" goto python_downloaded
 echo download python
-powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"http://sergey.fidoman.ru/fastery/python-3.6.2.exe\", \"%~dp0python-3.6.2.exe\")"
+powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"http://www.fidoman.ru/fastery/python-3.6.2.exe\", \"%~dp0python-3.6.2.exe\")"
 :python_downloaded
 echo install python
 
@@ -33,7 +33,7 @@ set MUSTQUIT=1
 if exist "%~dp0MicroSIP-3.16.4.exe" goto microsip_downloaded
 echo download microsip
 rem powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"https://www.microsip.org/downloads/?file=MicroSIP-3.15.7.exe\", \"%~dp0MicroSIP-3.15.7.exe\")"
-powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"http://sergey.fidoman.ru/fastery/MicroSIP-3.16.4.exe\", \"%~dp0MicroSIP-3.16.4.exe\")"
+powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"http://www.fidoman.ru/fastery/MicroSIP-3.16.4.exe\", \"%~dp0MicroSIP-3.16.4.exe\")"
 :microsip_downloaded
 rem echo install MicroSIP
 rem "%~dp0MicroSIP-3.15.7.exe" /S
@@ -44,7 +44,7 @@ if not errorlevel 1 goto git_ok
 
 if exist "%~dp0Git-2.17.0-32-bit.exe" goto git_downloaded
 echo download git
-powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"http://sergey.fidoman.ru/fastery/Git-2.17.0-32-bit.exe\", \"%~dp0Git-2.17.0-32-bit.exe\")"
+powershell -Command "(New-Object System.Net.WebClient).DownloadFile(\"http://www.fidoman.ru/fastery/Git-2.17.0-32-bit.exe\", \"%~dp0Git-2.17.0-32-bit.exe\")"
 :git_downloaded
 echo install git
 set MUSTQUIT=1
