@@ -1,0 +1,21 @@
+=== https://www.voip-info.org/asterisk-call-queues ===
+
+New features
+
+Queue() has options for penalty, wrapuptime and priority have been added to the Asterisk queue system. Priority works like this, according to the contributor:
+
+The new addition provides the ability to operate queues as priority queues in addition to the current FIFO mode. This gives the ability to queue a call not at the end of the queue but anywhere in the queue, according to the call’s priority.
+
+Now you can have just one queue servicing all the calls (more important and less important) with the right order. The priority of a call entering a queue is determined by a special channel variable, QUEUE_PRIO. Higher values of this variable mean higher priority. By not setting this variable, all calls have the same priority, 0, by default (FIFO). E.g.
+
+; Important clients
+exten => 111,1,Playback(welcome)
+exten => 111,2,SetVar(QUEUE_PRIO=10)
+exten => 111,3,Queue(support)
+
+; Less important clients
+exten => 112,1,Playback(welcome)
+exten => 112,2,SetVar(QUEUE_PRIO=5)
+exten => 112,3,Queue(support)
+
+=== ===
